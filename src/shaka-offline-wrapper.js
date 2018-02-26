@@ -19,6 +19,8 @@ const actions = {
 
 const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
+const PROGRESS_EVENT = 'progress';
+
 export default class ShakaOfflineWrapper {
   constructor(downloads, player) {
     this._dtgVideoElement = document.createElement('video');
@@ -40,7 +42,7 @@ export default class ShakaOfflineWrapper {
 
   download(entryId: string, metadata: Object): promise<*> {
     let currentDownload = this._downloads[entryId];
-    currentDownload['storage'] = this._initStorage();
+    currentDownload['storage'] = this._initStorage(entryId);
     currentDownload['state'] = downloadStates.DOWNLOADING;
     return currentDownload.storage.store(currentDownload.url, metadata).then(offlineManifest => {
       currentDownload['offlineUri'] = offlineManifest.offlineUri;
@@ -143,7 +145,7 @@ export default class ShakaOfflineWrapper {
     }
     return this._getDownloadedMetadataByEntryId(entryId).then(dbData => {
       let data = Object.assign({}, dbData);
-      data['storage'] = this._initStorage();
+      data['storage'] = this._initStorage(entryId);
       this._downloads[entryId] = data;
       return Promise.resolve();
     });
@@ -154,18 +156,26 @@ export default class ShakaOfflineWrapper {
   }
 
 
-  _initStorage() {
+  _initStorage(entryId) {
     let storage = new shaka.offline.Storage(this._dtgShaka);
-    let callback = this._setDownloadProgress;
 
     storage.configure({
-      progressCallback: this._setDownloadProgress
+      usePersistentLicense: false,
+      progressCallback: this._setDownloadProgress(entryId)
     });
     return storage;
   }
 
-  _setDownloadProgress(content, progress) {
-    window.postMessage({content: content, progress: progress * 100}, '*');
+  _setDownloadProgress(entryId){
+    return function(content, progress){
+      let event = new CustomEvent(PROGRESS_EVENT, {
+        detail: {
+            content: content,
+            progress: progress * 100,
+            entryId: entryId
+        }});
+      window.dispatchEvent(event);
+    }
   }
 
 }

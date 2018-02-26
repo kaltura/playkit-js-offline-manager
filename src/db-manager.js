@@ -49,7 +49,7 @@ export default class DBManager{
   }
 
   remove(storeName,key){
-    return dbPromise.then(db => {
+    return this.dbPromise.then(db => {
       const tx = db.transaction(storeName, 'readwrite');
       tx.objectStore(storeName).delete(key);
       return tx.complete;
@@ -57,7 +57,7 @@ export default class DBManager{
   }
 
   get(storeName, entryId){
-    return dbPromise.then(db => {
+    return this.dbPromise.then(db => {
       return db.transaction(storeName)
         .objectStore(storeName).get(entryId);
     }).then(obj =>{
@@ -66,7 +66,7 @@ export default class DBManager{
   }
 
   getAll(storeName){
-    return dbPromise.then(db => {
+    return this.dbPromise.then(db => {
       return db.transaction(storeName)
         .objectStore(storeName).getAll();
     }).then(allObjs => {
