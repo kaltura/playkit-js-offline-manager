@@ -90,6 +90,5 @@ module.exports = {
       amd: "playkit-js-providers",
       root: ["playkit", "providers"]
     }
-
   }
 };

@@ -50,7 +50,9 @@ export default class ShakaOfflineWrapper {
           entryId: entryId
         });
       });
-    });
+    }).catch((e) => {
+
+    });;
   }
 
 
@@ -71,7 +73,10 @@ export default class ShakaOfflineWrapper {
               action: actions.PAUSE
             });
           });
+        }).catch((e) => {
+
         });
+          ;
       }else{
         return Promise.resolve();
       }
@@ -92,8 +97,32 @@ export default class ShakaOfflineWrapper {
           })
         });
       }
+    }).catch((e) => {
+
+    });;
+  }
+
+
+  deleteMedia(entryId): promise<*> {
+
+    return this._setSessionData(entryId).then(() => {
+      let currrentDownload = this._downloads[entryId];
+        currrentDownload.state = downloadStates.DELETED;
+        currrentDownload.storage.remove(currrentDownload.offlineUri).then(() => {
+          this._dbManager.remove(ENTRIES_MAP_STORE_NAME, entryId).then(()=>{
+            delete this._downloads[entryId];
+            return Promise.resolve({
+              action: actions.DELETED,
+              entryId: entryId
+            });
+          })
+        });
+
+    }).catch((e) => {
+
     });
   }
+
 
   _prepareItemForStorage(object){
     const keysToDelete = ["storage", "url", "mimetype"];
@@ -104,19 +133,6 @@ export default class ShakaOfflineWrapper {
       }
     }
     return storeObj;
-  }
-
-  deleteMedia(entryId): promise<*> {
-    this._getDownloadedMetadataByEntryId(entryId).then(dbData => {
-      this._setSessionData();
-      let storage = this._downloads.entryId.storage;
-      storage.remove(dbData.offlineUri).then(() => {
-        Promise.resolve({
-          action: action.delete,
-          entryId: entryId
-        });
-      });
-    });
   }
 
 
