@@ -2,6 +2,8 @@
 import ShakaOfflineWrapper from './shaka-offline-wrapper'
 import {Provider} from 'playkit-js-providers'
 import {Utils} from 'playkit-js'
+import {dbManager} from 'db-manager'
+import DBManager from "./db-manager";
 
 
 /**
@@ -16,6 +18,8 @@ export default class OfflineManager{
    * @static
    */
   static defaultConfig: Object = {};
+
+  static downloads: Object = {};
 
   /**
    * TODO: Define under what conditions the plugin is valid.
@@ -37,7 +41,9 @@ export default class OfflineManager{
     //super(player,config);
     //this.player = player;
     this.config = config;
+    this._downloads = {};
     this._setOfflineAdapter();
+
     /**
      Now you have access to the BasePlugin members:
      1. config: The runtime configuration of the plugin.
@@ -51,7 +57,7 @@ export default class OfflineManager{
 
   _setOfflineAdapter(): void{
     // if (this.config.manager === 'shaka'){
-      this._offlineManager = new ShakaOfflineWrapper(this.player);
+      this._offlineManager = new ShakaOfflineWrapper(this._downloads, this.player);
     // }
   }
 
@@ -61,10 +67,10 @@ export default class OfflineManager{
       provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
           if( Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0){
-            resolve({
-              entryData: mediaConfig.sources.dash[0]
-            });
-            localStorage.setItem("video", JSON.stringify(mediaConfig));
+            let sourceData = mediaConfig.sources.dash[0];
+            sourceData.entryId = mediaInfo.entryId;
+            this._downloads[mediaInfo.entryId] = sourceData;
+            resolve(sourceData);
           }else{
             reject("getMediaInfo error");
           }
@@ -72,16 +78,20 @@ export default class OfflineManager{
     })
   }
 
+  pause(entryId): Promise<*>{
+    return this._offlineManager.pause(entryId);
+  }
 
+  resume(entryId): Promise<*>{
+    return this._offlineManager.resume(entryId);
+  }
 
   download(url: string, options: Object): Promise<*>{
     return this._offlineManager.download(url, options);
   }
 
-  deleteMedia(id: string): Promise<*>{
-    this._offlineManager.deleteMedia(id).then((res)=>{
-
-    });
+  deleteMedia(entryId: string): Promise<*>{
+    return this._offlineManager.deleteMedia(entryId);
   }
 
   /**
@@ -105,6 +115,8 @@ export default class OfflineManager{
   reset(): void {
   // Write logic
   }
+
+
 }
 
 
