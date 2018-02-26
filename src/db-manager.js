@@ -37,8 +37,8 @@ export default class DBManager{
 
   add(storeName, key ,item){
     return this.dbPromise.then(db => {
-      var tx = db.transaction(storeName, 'readwrite');
-      var store = tx.objectStore(storeName);
+      let tx = db.transaction(storeName, 'readwrite');
+      let store = tx.objectStore(storeName);
       this._addConfigToItem(item);
       item[KEY_PATH] = key;
       store.put(item);
@@ -79,7 +79,7 @@ export default class DBManager{
   }
 
   update(store,key,value){
-    this.add(store,key,value);
+    return this.add(store,key,value);
   }
 
   _addConfigToItem(item){

@@ -41,91 +41,96 @@ export default class ShakaOfflineWrapper {
   download(entryId: string, metadata: Object): promise<*> {
     let currentDownload = this._downloads[entryId];
     currentDownload['storage'] = this._initStorage();
-
+    currentDownload['state'] = downloadStates.DOWNLOADING;
     return currentDownload.storage.store(currentDownload.url, metadata).then(offlineManifest => {
-      const item = {
-        offlineUri: offlineManifest.offlineUri,
-        entryId: entryId,
-        state: downloadStates.DOWNLOADING
-      };
-      this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, item).then(()=>{
+      currentDownload['offlineUri'] = offlineManifest.offlineUri;
+      return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(()=>{
         Promise.resolve({
-          action: actions.DOWNLOAD_END,
+          action: actions.DOWNLOAD_START,
           entryId: entryId
         });
       });
     });
   }
 
-  deleteMedia(entryId): promise<*> {
-    this._getDownloadedMetadataByEntryId(entryId).then(dbData => {
-        this._setSessionData();
-        let storage = this._downloads.entryId.storage;
-        storage.remove(dbData.offlineUri).then(() => {
-          Promise.resolve({
-            action: action.delete,
-            entryId: entryId
-          });
-        });
-    });
-  }
+
+
+
 
   pause(entryId): promise<*> {
-    if (!this._downloads.entryId) {
-      Promise.resolve("not downloading / resuming"); //TODO LOG THIS (until background fetch is here)
+    let currentDownload = this._downloads[entryId];
+    if (!currentDownload) {
+      return Promise.resolve("not downloading / resuming"); //TODO LOG THIS (until background fetch is here)
     }else{
-      if ([downloadStates.DOWNLOADING, downloadStates.RESUMED].includes(dbData.status)) {
-        this._downloads.entryId.storage.pause().then(()=>{
-          const item = {
-            entryId: entryId,
-            state: downloadStates.PAUSED
-          };
-          this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, item).then(()=>{
+      if ([downloadStates.DOWNLOADING, downloadStates.RESUMED].includes(currentDownload.state)) {
+        return currentDownload.storage.pause().then(()=>{
+          currentDownload.state = downloadStates.PAUSED;
+          return this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(()=>{
             Promise.resolve({
-              action: actions.DOWNLOAD_END,
-              entryId: entryId
+              entryId: entryId,
+              action: actions.PAUSE
             });
           });
         });
-
-        Promise.resolve({
-          entryId: entryId,
-          action: actions.PAUSE
-        });
+      }else{
+        return Promise.resolve();
       }
     }
-
-
-
   }
 
   resume(entryId): promise<*> {
-
-    this._getDownloadedMetadataByEntryId(entryId).then(dbData => {
-      if (dbData.status === downloadStates.PAUSED) {
-        this._setSessionData();
-        let storage = this._downloads.entryId.storage;
-        storage.resume(preferences.offlineUri).then(() => {
-          Promise.resolve({
-            action: action.RESUME,
-            entryId: entryId
-          });
+    return this._setSessionData(entryId).then(() => {
+      let currrentDownload = this._downloads[entryId];
+      if (currrentDownload.state === downloadStates.PAUSED) {
+        currrentDownload.state = downloadStates.RESUMED;
+        currrentDownload.storage.resume(currrentDownload.offlineUri).then(() => {
+          this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currrentDownload)).then(()=>{
+            return Promise.resolve({
+              action: actions.RESUME,
+              entryId: entryId
+            });
+          })
         });
       }
+    });
+  }
+
+  _prepareItemForStorage(object){
+    const keysToDelete = ["storage", "url", "mimetype"];
+    let storeObj = Object.assign({}, object);
+    for (let key in storeObj){
+      if (keysToDelete.includes(key)){
+        delete storeObj[key];
+      }
+    }
+    return storeObj;
+  }
+
+  deleteMedia(entryId): promise<*> {
+    this._getDownloadedMetadataByEntryId(entryId).then(dbData => {
+      this._setSessionData();
+      let storage = this._downloads.entryId.storage;
+      storage.remove(dbData.offlineUri).then(() => {
+        Promise.resolve({
+          action: action.delete,
+          entryId: entryId
+        });
+      });
     });
   }
 
 
 
   _setSessionData(entryId): promise<*> {
-    if (this._downloads.entryId) {
-      return this._downloads.entryId;
+    if (this._downloads[entryId]) {
+      return Promise.resolve();
     }
-    const data = {
-      storage: this._initStorage(),
-      status: null
-    }
-    this._downloads[entryId] = data;
+    return this._getDownloadedMetadataByEntryId(entryId).then(dbData => {
+      let data = Object.assign({}, dbData);
+      data['storage'] = this._initStorage();
+      this._downloads[entryId] = data;
+      return Promise.resolve();
+    });
   }
 
   _getDownloadedMetadataByEntryId(entryId): promise<*> {
