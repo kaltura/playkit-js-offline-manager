@@ -57,7 +57,7 @@ export default class OfflineManager{
 
   _setOfflineAdapter(): void{
     // if (this.config.manager === 'shaka'){
-      this._offlineManager = new ShakaOfflineWrapper(this._downloads, this.player);
+      this._offlineManager = new ShakaOfflineWrapper(this._downloads);
     // }
   }
 
@@ -92,6 +92,10 @@ export default class OfflineManager{
 
   deleteMedia(entryId: string): Promise<*>{
     return this._offlineManager.deleteMedia(entryId);
+  }
+
+  getMediaInfoFromDB(entryId: string): Promise<*>{
+    return this._offlineManager.getDataByEntry(entryId);
   }
 
   /**
