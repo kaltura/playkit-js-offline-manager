@@ -46,6 +46,7 @@ export default class ShakaOfflineWrapper {
     currentDownload['storage'] = this._initStorage(entryId);
     currentDownload['state'] = downloadStates.DOWNLOADING;
     return currentDownload.storage.store(currentDownload.sources.dash[0].url, metadata).then(offlineManifest => {
+      currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
       currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
       return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(() => {
         Promise.resolve({
@@ -88,7 +89,8 @@ export default class ShakaOfflineWrapper {
       let currentDownload = this._downloads[entryId];
       if (currentDownload.state === downloadStates.PAUSED) {
         currentDownload.state = downloadStates.RESUMED;
-        currentDownload.storage.resume(currentDownload.sources.dash[0].url).then(() => {
+        currentDownload.storage.resume(currentDownload.sources.dash[0].url).then((manifestDB) => {
+          currentDownload.state = [manifestDB.downloadStatus,manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
           this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(() => {
             return Promise.resolve({
               action: actions.RESUME,
