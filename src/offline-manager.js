@@ -2,9 +2,6 @@
 import ShakaOfflineWrapper from './shaka-offline-wrapper'
 import {Provider} from 'playkit-js-providers'
 import {Utils} from 'playkit-js'
-import {dbManager} from 'db-manager'
-
-
 
 /**
  * Your class description.
@@ -24,8 +21,6 @@ export default class OfflineManager{
 
   /**
    * @constructor
-   * @param {string} name - The plugin name.
-   * @param {Player} player - The player instance.
    * @param {Object} config - The plugin config.
    */
   constructor(config) {

@@ -1,5 +1,4 @@
 // @flow
-import {Utils} from 'playkit-js'
 import idb from 'idb'
 
 const KEY_PATH: string = 'entryId';
@@ -14,13 +13,11 @@ export default class DBManager{
 
   /**
    * @constructor
-   * @param {string} name - The plugin name.
-   * @param {Player} player - The player instance.
    * @param {Object} config - The plugin config.
    */
   constructor(config: Object) {
     if (!('indexedDB' in window)) {
-      console.log('This browser doesn\'t support IndexedDB');
+     // console.log('This browser doesn\'t support IndexedDB');
       return;
     }
     this.config = config;
@@ -44,7 +41,7 @@ export default class DBManager{
       store.put(item);
       return tx.complete;
     }).then(()=> {
-      console.log('added item ' + key);
+      //console.log('added item ' + key);
     });
   }
 
@@ -70,12 +67,12 @@ export default class DBManager{
       return db.transaction(storeName)
         .objectStore(storeName).getAll();
     }).then(allObjs => {
-      return allObj;
+      return allObjs;
     });
   }
 
   removeAll(store){
-
+    return store;//TBD?
   }
 
   update(store,key,value){
@@ -84,7 +81,7 @@ export default class DBManager{
 
   _addConfigToItem(item){
     for (let key in this.config){
-      item[key] = config.key;
+      item[key] = this.config[key];
     }
   }
 

@@ -22,6 +22,7 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 const PROGRESS_EVENT = 'progress';
 
 export default class ShakaOfflineWrapper {
+
   constructor(downloads) {
     this._dtgVideoElement = document.createElement('video');
     shaka.polyfill.installAll();
@@ -39,8 +40,7 @@ export default class ShakaOfflineWrapper {
     this._downloads = downloads;
   }
 
-
-  download(entryId: string, metadata: Object): promise<*> {
+  download(entryId: String, metadata: Object): Promise<*> {
     let currentDownload = this._downloads[entryId];
     this._configureDrmIfNeeded(entryId);
     currentDownload['storage'] = this._initStorage(entryId);
@@ -54,13 +54,13 @@ export default class ShakaOfflineWrapper {
         });
       });
     }).catch((e) => {
-
+      Promise.reject(e);
     });
-    ;
+
   }
 
 
-  pause(entryId): promise<*> {
+  pause(entryId: string): Promise<*> {
     let currentDownload = this._downloads[entryId];
     if (!currentDownload) {
       return Promise.resolve("not downloading / resuming"); //TODO LOG THIS (until background fetch is here)
@@ -75,16 +75,15 @@ export default class ShakaOfflineWrapper {
             });
           });
         }).catch((e) => {
-
+          Promise.reject(e);
         });
-        ;
       } else {
         return Promise.resolve();
       }
     }
   }
 
-  resume(entryId): promise<*> {
+  resume(entryId: string): Promise<*> {
     return this._setSessionData(entryId).then(() => {
       let currentDownload = this._downloads[entryId];
       if (currentDownload.state === downloadStates.PAUSED) {
@@ -99,17 +98,17 @@ export default class ShakaOfflineWrapper {
         });
       }
     }).catch((e) => {
-
+      Promise.reject(e);
     });
   }
 
 
-  deleteMedia(entryId): promise<*> {
+  deleteMedia(entryId): Promise<*> {
     return this._setSessionData(entryId).then(() => {
-      let currrentDownload = this._downloads[entryId];
-      currrentDownload.state = downloadStates.DELETED;
+      let currentDownload = this._downloads[entryId];
+      currentDownload.state = downloadStates.DELETED;
 
-      currrentDownload.storage.remove(currentDownload.sources.dash[0].url).then(() => {
+      currentDownload.storage.remove(currentDownload.sources.dash[0].url).then(() => {
         this._dbManager.remove(ENTRIES_MAP_STORE_NAME, entryId).then(() => {
           delete this._downloads[entryId];
           return Promise.resolve({
@@ -120,11 +119,11 @@ export default class ShakaOfflineWrapper {
       });
 
     }).catch((e) => {
-
+      Promise.reject(e);
     });
   }
 
-  getDataByEntry(entryId): promise<*> {
+  getDataByEntry(entryId): Promise<*> {
     return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
   }
 
@@ -156,7 +155,7 @@ export default class ShakaOfflineWrapper {
   }
 
 
-  _setSessionData(entryId): promise<*> {
+  _setSessionData(entryId): Promise<*> {
     if (this._downloads[entryId]) {
       return Promise.resolve();
     }

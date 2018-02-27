@@ -1,8 +1,8 @@
 {
   "parser": "babel-eslint",
   "extends": [
-    "eslint:recommended",
-    "plugin:flowtype/recommended"
+    "eslint:recommended"
+    //"plugin:flowtype/recommended"
   ],
   "plugins": [
     "import",
@@ -23,12 +23,12 @@
     "__NAME__": true
   },
   "rules": {
-    "mocha-no-only/mocha-no-only": "off",
-    "require-jsdoc": [
-      "error"
-    ],
-    "valid-jsdoc": [
-      "error"
-    ]
+    "mocha-no-only/mocha-no-only": "off"
+//    "require-jsdoc": [
+//      "error"
+//    ],
+//    "valid-jsdoc": [
+//      "error"
+//    ]
   }
 }
