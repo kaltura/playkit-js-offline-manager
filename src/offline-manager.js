@@ -86,6 +86,10 @@ export default class OfflineManager{
     return this._offlineManager.getDataByEntry(entryId);
   }
 
+  getAllDownloads(): Promise<*>{
+    return this._offlineManager.getAllDownloads();
+  }
+
   /**
    * TODO: Define the destroy logic of your plugin.
    * Destroys the plugin.

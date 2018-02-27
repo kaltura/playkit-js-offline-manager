@@ -127,6 +127,10 @@ export default class ShakaOfflineWrapper {
     return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
   }
 
+  getAllDownloads(): Promise<*> {
+    return this._dbManager.getAll(ENTRIES_MAP_STORE_NAME);
+  }
+
 
   _configureDrmIfNeeded(entryId) {
     let currentDownload = this._downloads[entryId];

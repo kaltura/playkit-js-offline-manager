@@ -72,7 +72,7 @@ export default class DBManager{
   }
 
   removeAll(store){
-    return store;//TBD?
+    return store; //TODO implement
   }
 
   update(store,key,value){
