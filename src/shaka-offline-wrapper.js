@@ -46,7 +46,7 @@ export default class ShakaOfflineWrapper {
     this._configureDrmIfNeeded(entryId);
     currentDownload['storage'] = this._initStorage(entryId);
     currentDownload['state'] = downloadStates.DOWNLOADING;
-    return currentDownload.storage.store(currentDownload.url, metadata).then(offlineManifest => {
+    return currentDownload.storage.store(currentDownload.sources.dash[0].url, metadata).then(offlineManifest => {
       currentDownload['offlineUri'] = offlineManifest.offlineUri;
       return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(() => {
         Promise.resolve({
@@ -102,12 +102,10 @@ export default class ShakaOfflineWrapper {
     }).catch((e) => {
 
     });
-    ;
   }
 
 
   deleteMedia(entryId): promise<*> {
-
     return this._setSessionData(entryId).then(() => {
       let currrentDownload = this._downloads[entryId];
       currrentDownload.state = downloadStates.DELETED;
@@ -129,9 +127,10 @@ export default class ShakaOfflineWrapper {
 
   _configureDrmIfNeeded(entryId) {
     let currentDownload = this._downloads[entryId];
-    if (currentDownload.drmData) {
+    const drmData = currentDownload.sources.dash[0].drmData;
+    if (drmData) {
       let servers = {};
-      currentDownload.drmData.forEach((val) => {
+      drmData.forEach((val) => {
         servers[val.scheme] = val.licenseUrl;
       });
       this._dtgShaka.configure({'drm': {'servers': servers}})

@@ -3,7 +3,7 @@ import ShakaOfflineWrapper from './shaka-offline-wrapper'
 import {Provider} from 'playkit-js-providers'
 import {Utils} from 'playkit-js'
 import {dbManager} from 'db-manager'
-import DBManager from "./db-manager";
+
 
 
 /**
@@ -69,7 +69,7 @@ export default class OfflineManager{
           if( Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0){
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
-            this._downloads[mediaInfo.entryId] = sourceData;
+            this._downloads[mediaInfo.entryId] = mediaConfig;
             resolve(sourceData);
           }else{
             reject("getMediaInfo error");
