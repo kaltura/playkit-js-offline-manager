@@ -11,15 +11,6 @@ import {dbManager} from 'db-manager'
  * @classdesc
  */
 export default class OfflineManager{
-  /**
-   * TODO: Override and define your default configuration for the plugin.
-   * The default configuration of the plugin.
-   * @type {Object}
-   * @static
-   */
-  static defaultConfig: Object = {};
-
-  static downloads: Object = {};
 
   /**
    * TODO: Define under what conditions the plugin is valid.
@@ -37,11 +28,13 @@ export default class OfflineManager{
    * @param {Player} player - The player instance.
    * @param {Object} config - The plugin config.
    */
-  constructor(config: Object) {
-    //super(player,config);
-    //this.player = player;
-    this.config = config;
+  constructor(config) {
+    if (this._downloads){
+      return;
+    }
+    // this.config = config;
     this._downloads = {};
+    this._config = config;
     this._setOfflineAdapter();
 
     /**
@@ -63,7 +56,7 @@ export default class OfflineManager{
 
   getMediaInfo(mediaInfo: Object): Promise<*>{
     return new Promise((resolve, reject)=>{
-      const provider = new Provider(this.config.provider);
+      const provider = new Provider(this._config.provider);
       provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
           if( Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0){
