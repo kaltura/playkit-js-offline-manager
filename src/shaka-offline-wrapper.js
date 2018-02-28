@@ -38,26 +38,35 @@ export default class ShakaOfflineWrapper {
       playerVersion: ""//player.version
     });
     this._downloads = downloads;
+    this._currentlyDownloaded = [];
   }
 
   download(entryId: String, options): Promise<*> {
     let currentDownload = this._downloads[entryId];
+    if (this._currentlyDownloaded.indexOf(entryId) > -1){
+      return Promise.resolve("not downloading / resuming");
+    }
     this._configureDrmIfNeeded(entryId);
     currentDownload['storage'] = this._initStorage(entryId,options);
     currentDownload['state'] = downloadStates.DOWNLOADING;
-    return currentDownload.storage.store(currentDownload.sources.dash[0].url, {}).then(offlineManifest => {
-      currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
-      currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
-      return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(() => {
-        Promise.resolve({
-          action: actions.DOWNLOAD_START,
-          entryId: entryId
-        });
-      });
+    this._currentlyDownloaded.push(entryId);
+    this._doesEntryExists(entryId).then((existsInDB)=> {
+        if (existsInDB) {
+          return Promise.resolve("not downloading / resuming");
+        }
+        return currentDownload.storage.store(currentDownload.sources.dash[0].url, {}).then(offlineManifest => {
+          currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
+          currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
+          return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(() => {
+            Promise.resolve({
+              action: actions.DOWNLOAD_START,
+              entryId: entryId
+            });
+          });
+        })
     }).catch((e) => {
       Promise.reject(e);
     });
-
   }
 
 
@@ -105,11 +114,11 @@ export default class ShakaOfflineWrapper {
   }
 
 
-  deleteMedia(entryId): Promise<*> {
+  remove(entryId): Promise<*> {
     return this._setSessionData(entryId).then(() => {
       let currentDownload = this._downloads[entryId];
       currentDownload.state = downloadStates.DELETED;
-
+      this._configureDrmIfNeeded(entryId);
       currentDownload.storage.remove(currentDownload.sources.dash[0].url).then(() => {
         this._dbManager.remove(ENTRIES_MAP_STORE_NAME, entryId).then(() => {
           delete this._downloads[entryId];
@@ -133,6 +142,11 @@ export default class ShakaOfflineWrapper {
     return this._dbManager.getAll(ENTRIES_MAP_STORE_NAME);
   }
 
+  _doesEntryExists(entryId): Promise<*> {
+    return this.getDataByEntry(entryId).then((entry) => {
+      return Promise.resolve(entry && entry.state);
+    })
+  }
 
   _configureDrmIfNeeded(entryId) {
     let currentDownload = this._downloads[entryId];
@@ -180,7 +194,7 @@ export default class ShakaOfflineWrapper {
       usePersistentLicense: true,
       progressCallback: this._setDownloadProgress(entryId),
     };
-    if (options.trackSelectionCallback){
+    if (options && options.trackSelectionCallback){
       configuration["trackSelectionCallback"] = options.trackSelectionCallback;
     }
     storage.configure(configuration);

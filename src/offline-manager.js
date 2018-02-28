@@ -78,8 +78,8 @@ export default class OfflineManager{
     return this._offlineManager.download(url, options);
   }
 
-  deleteMedia(entryId: string): Promise<*>{
-    return this._offlineManager.deleteMedia(entryId);
+  remove(entryId: string): Promise<*>{
+    return this._offlineManager.remove(entryId);
   }
 
   getMediaInfoFromDB(entryId: string): Promise<*>{
