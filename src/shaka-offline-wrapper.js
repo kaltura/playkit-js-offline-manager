@@ -40,12 +40,12 @@ export default class ShakaOfflineWrapper {
     this._downloads = downloads;
   }
 
-  download(entryId: String, metadata: Object): Promise<*> {
+  download(entryId: String, options): Promise<*> {
     let currentDownload = this._downloads[entryId];
     this._configureDrmIfNeeded(entryId);
-    currentDownload['storage'] = this._initStorage(entryId);
+    currentDownload['storage'] = this._initStorage(entryId,options);
     currentDownload['state'] = downloadStates.DOWNLOADING;
-    return currentDownload.storage.store(currentDownload.sources.dash[0].url, metadata).then(offlineManifest => {
+    return currentDownload.storage.store(currentDownload.sources.dash[0].url, {}).then(offlineManifest => {
       currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
       currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
       return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._prepareItemForStorage(currentDownload)).then(() => {
@@ -174,13 +174,16 @@ export default class ShakaOfflineWrapper {
   }
 
 
-  _initStorage(entryId) {
+  _initStorage(entryId,options) {
     let storage = new shaka.offline.Storage(this._dtgShaka);
-
-    storage.configure({
-      usePersistentLicense: false,
-      progressCallback: this._setDownloadProgress(entryId)
-    });
+    let configuration = {
+      usePersistentLicense: true,
+      progressCallback: this._setDownloadProgress(entryId),
+    };
+    if (options.trackSelectionCallback){
+      configuration["trackSelectionCallback"] = options.trackSelectionCallback;
+    }
+    storage.configure(configuration);
     return storage;
   }
 
