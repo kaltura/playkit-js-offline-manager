@@ -105,11 +105,11 @@ export default class ShakaOfflineWrapper {
   }
 
 
-  deleteMedia(entryId): Promise<*> {
+  remove(entryId): Promise<*> {
     return this._setSessionData(entryId).then(() => {
       let currentDownload = this._downloads[entryId];
       currentDownload.state = downloadStates.DELETED;
-
+      if (!currentDownload.state) return Promise.reject("Entry not found");
       currentDownload.storage.remove(currentDownload.sources.dash[0].url).then(() => {
         this._dbManager.remove(ENTRIES_MAP_STORE_NAME, entryId).then(() => {
           delete this._downloads[entryId];
