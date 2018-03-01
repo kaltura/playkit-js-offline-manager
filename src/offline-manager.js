@@ -51,16 +51,19 @@ export default class OfflineManager{
 
   getMediaInfo(mediaInfo: Object): Promise<*>{
     return new Promise((resolve, reject)=>{
+      if (this._downloads[mediaInfo.entryId]){
+        return resolve(this._downloads[mediaInfo.entryId].sources.dash[0]);
+      }
       const provider = new Provider(this._config.provider);
-      provider.getMediaConfig(mediaInfo)
+      return provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
           if( Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0){
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
             this._downloads[mediaInfo.entryId] = mediaConfig;
-            resolve(sourceData);
+            return resolve(sourceData);
           }else{
-            reject("getMediaInfo error");
+            return reject("getMediaInfo error");
           }
         });
     })
