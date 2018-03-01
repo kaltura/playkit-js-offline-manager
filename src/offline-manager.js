@@ -2,12 +2,14 @@
 import {ShakaOfflineWrapper,PROGRESS_EVENT} from "./shaka-offline-wrapper";
 import {Provider} from 'playkit-js-providers';
 import {Utils,FakeEventTarget,EventManager} from 'playkit-js';
-
+import getLogger, {getLogLevel, setLogLevel, LogLevel} from './utils/logger'
 /**
  * Your class description.
  * @classdesc
  */
 export default class OfflineManager extends FakeEventTarget{
+
+  static _logger: any = getLogger('OfflineManager');
 
   /**
    * TODO: Define under what conditions the plugin is valid.
@@ -24,6 +26,8 @@ export default class OfflineManager extends FakeEventTarget{
    * @param {Object} config - The plugin config.
    */
   constructor(config) {
+    setLogLevel(LogLevel.DEBUG);
+    OfflineManager._logger.debug('offline manager created');
     super();
     if (this._downloads){
       return;
