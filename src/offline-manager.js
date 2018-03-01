@@ -2,7 +2,7 @@
 import {ShakaOfflineWrapper,PROGRESS_EVENT} from "./shaka-offline-wrapper";
 import {Provider} from 'playkit-js-providers';
 import {Utils,FakeEventTarget,EventManager} from 'playkit-js';
-import getLogger, {getLogLevel, setLogLevel, LogLevel} from './utils/logger'
+import getLogger, {setLogLevel, LogLevel} from './utils/logger'
 /**
  * Your class description.
  * @classdesc
