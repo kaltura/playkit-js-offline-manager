@@ -39,17 +39,7 @@ export default class OfflineManager extends FakeEventTarget{
     this._config = config;
     this._eventManager = new EventManager();
     this._setOfflineAdapter();
-
-    /**
-     Now you have access to the BasePlugin members:
-     1. config: The runtime configuration of the plugin.
-     2. name: The name of the plugin.
-     3. logger: The logger of the plugin.
-     4. player: Reference to the actual player.
-     5. eventManager: The event manager of the plugin.
-    */
   }
-
 
   _setOfflineAdapter(): void{
       this._offlineManager = new ShakaOfflineWrapper(this._downloads, this._config);
@@ -107,6 +97,17 @@ export default class OfflineManager extends FakeEventTarget{
 
   getAllDownloads(): Promise<*>{
     return this._offlineManager.getAllDownloads();
+  }
+
+  removeAll(): Promise<*>{
+    let promises = [];
+    return this.getAllDownloads().then(downloads => {
+      downloads.forEach(download => {
+        promises.push(this.remove(download.entryId));
+      });
+      this._downloads = {};
+      return Promise.all(promises);
+    });
   }
 
   /**
