@@ -43,17 +43,17 @@ export default class ShakaOfflineWrapper {
 
   download(entryId: String, options): Promise<*> {
     let currentDownload = this._downloads[entryId];
-    if (this._currentlyDownloaded.indexOf(entryId) > -1){
-      return Promise.resolve("not downloading / resuming");
+    if (currentDownload.state){
+      return Promise.reject("already downloading / resuming / paused");
     }
     this._configureDrmIfNeeded(entryId);
-    currentDownload['storage'] = this._initStorage(entryId,options);
-    currentDownload['state'] = downloadStates.DOWNLOADING;
     this._currentlyDownloaded.push(entryId);
     this._doesEntryExists(entryId).then((existsInDB)=> {
         if (existsInDB) {
-          return Promise.resolve("not downloading / resuming");
+          return Promise.reject("already downloading / paused");
         }
+        currentDownload['storage'] = this._initStorage(entryId,options);
+        currentDownload['state'] = downloadStates.DOWNLOADING;
         return currentDownload.storage.store(currentDownload.sources.dash[0].url, {}).then(offlineManifest => {
           currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
           currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
@@ -107,6 +107,8 @@ export default class ShakaOfflineWrapper {
             });
           })
         });
+      } else {
+        Promise.reject("already resumed / downloaded");
       }
     }).catch((e) => {
       Promise.reject(e);
