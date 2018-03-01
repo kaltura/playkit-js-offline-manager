@@ -1,13 +1,13 @@
 // @flow
 import ShakaOfflineWrapper from './shaka-offline-wrapper';
 import {Provider} from 'playkit-js-providers';
-import {Utils} from 'playkit-js';
+import {Utils,FakeEventTarget,EventManager} from 'playkit-js';
 
 /**
  * Your class description.
  * @classdesc
  */
-export default class OfflineManager {
+export default class OfflineManager extends FakeEventTarget{
 
   /**
    * TODO: Define under what conditions the plugin is valid.
@@ -24,12 +24,14 @@ export default class OfflineManager {
    * @param {Object} config - The plugin config.
    */
   constructor(config) {
+    super();
     if (this._downloads){
       return;
     }
     // this.config = config;
     this._downloads = {};
     this._config = config;
+    this._eventManager = new EventManager();
     this._setOfflineAdapter();
 
     /**
@@ -44,7 +46,9 @@ export default class OfflineManager {
 
 
   _setOfflineAdapter(): void{
-    this._offlineManager = new ShakaOfflineWrapper(this._downloads);
+      this._offlineManager = new ShakaOfflineWrapper(this._downloads);
+      this._eventManager.listen(this._offlineManager,"progress",(e)=>{
+        this.dispatchEvent(e)});
   }
 
   getMediaInfo(mediaInfo: Object): Promise<*>{
@@ -100,6 +104,7 @@ export default class OfflineManager {
    */
   destroy(): void {
     // Write logic
+    this._eventManager.destroy();
   }
 
   /**

@@ -1,6 +1,7 @@
 //flow
 import shaka from 'shaka-player'
 import DBManager from './db-manager';
+import {FakeEventTarget,FakeEvent} from 'playkit-js'
 
 const downloadStates = {
   DOWNLOADING: 'downloading',
@@ -21,9 +22,10 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const PROGRESS_EVENT = 'progress';
 
-export default class ShakaOfflineWrapper{
+export default class ShakaOfflineWrapper extends FakeEventTarget{
 
   constructor(downloads) {
+    super();
     this._dtgVideoElement = document.createElement('video');
     shaka.polyfill.installAll();
 
@@ -189,7 +191,7 @@ export default class ShakaOfflineWrapper{
   }
 
 
-  _initStorage(entryId,options) {
+  _initStorage(entryId,options = {}) {
     let storage = new shaka.offline.Storage(this._dtgShaka);
     let configuration = {
       usePersistentLicense: true,
@@ -203,15 +205,15 @@ export default class ShakaOfflineWrapper{
   }
 
   _setDownloadProgress(entryId) {
-    return function (content, progress) {
-      let event = new CustomEvent(PROGRESS_EVENT, {
+    return (content, progress) => {
+      let event = new FakeEvent(PROGRESS_EVENT, {
         detail: {
           content: content,
           progress: progress * 100,
           entryId: entryId
         }
       });
-      window.dispatchEvent(event);
+      this.dispatchEvent(event);
     }
   }
 
