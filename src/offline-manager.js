@@ -110,6 +110,16 @@ export default class OfflineManager extends FakeEventTarget{
     });
   }
 
+  pauseAll(): Promise<*>{
+    let promises = [];
+    return this.getAllDownloads().then(downloads => {
+      downloads.forEach(download => {
+        promises.push(this.pause(download.entryId));
+      });
+      return Promise.all(promises);
+    });
+  }
+
   /**
    * TODO: Define the destroy logic of your plugin.
    * Destroys the plugin.
