@@ -1,5 +1,6 @@
 // @flow
 import idb from 'idb'
+import getLogger from "./utils/logger";
 
 const KEY_PATH: string = 'entryId';
 const ENTRIES_MAP_STORE_NAME: string = 'entriesMap';
@@ -10,12 +11,13 @@ const DB_NAME: string = 'offline-manager'
  */
 export default class DBManager{
 
-
+  static _logger: any = getLogger('DBManager');
   /**
    * @constructor
    * @param {Object} config - The plugin config.
    */
   constructor(config: Object) {
+    DBManager._logger.debug('DBManager created');
     if (!('indexedDB' in window)) {
      // console.log('This browser doesn\'t support IndexedDB');
       return;
@@ -26,6 +28,7 @@ export default class DBManager{
 
   open(store){
     this.dbPromise = idb.open(store, 1, (upgradeDb)=>{
+      DBManager._logger.debug('open');
       if (!upgradeDb.objectStoreNames.contains(ENTRIES_MAP_STORE_NAME)) {
         upgradeDb.createObjectStore(ENTRIES_MAP_STORE_NAME, {keyPath: KEY_PATH});
       }
@@ -34,6 +37,7 @@ export default class DBManager{
 
   add(storeName, key ,item){
     return this.dbPromise.then(db => {
+      DBManager._logger.debug('add');
       let tx = db.transaction(storeName, 'readwrite');
       let store = tx.objectStore(storeName);
       this._addConfigToItem(item);
@@ -47,6 +51,7 @@ export default class DBManager{
 
   remove(storeName,key){
     return this.dbPromise.then(db => {
+      DBManager._logger.debug('remove');
       const tx = db.transaction(storeName, 'readwrite');
       tx.objectStore(storeName).delete(key);
       return tx.complete;
@@ -55,6 +60,7 @@ export default class DBManager{
 
   get(storeName, entryId){
     return this.dbPromise.then(db => {
+      DBManager._logger.debug('get', entryId);
       return db.transaction(storeName)
         .objectStore(storeName).get(entryId);
     }).then(obj =>{
@@ -64,6 +70,7 @@ export default class DBManager{
 
   getAll(storeName){
     return this.dbPromise.then(db => {
+      DBManager._logger.debug('getAll');
       return db.transaction(storeName)
         .objectStore(storeName).getAll();
     }).then(allObjs => {
@@ -76,6 +83,7 @@ export default class DBManager{
   }
 
   update(store,key,value){
+    DBManager._logger.debug('update');
     return this.add(store,key,value);
   }
 

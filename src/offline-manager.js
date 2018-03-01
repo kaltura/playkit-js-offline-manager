@@ -26,7 +26,9 @@ export default class OfflineManager extends FakeEventTarget{
    * @param {Object} config - The plugin config.
    */
   constructor(config) {
-    setLogLevel(LogLevel.DEBUG);
+    if (config.logLevel && LogLevel[config.logLevel]) {
+      setLogLevel(LogLevel[config.logLevel]);
+    }
     OfflineManager._logger.debug('offline manager created');
     super();
     if (this._downloads){
@@ -50,12 +52,13 @@ export default class OfflineManager extends FakeEventTarget{
 
 
   _setOfflineAdapter(): void{
-      this._offlineManager = new ShakaOfflineWrapper(this._downloads);
+      this._offlineManager = new ShakaOfflineWrapper(this._downloads, this._config);
       this._eventManager.listen(this._offlineManager,PROGRESS_EVENT,(e)=>{
         this.dispatchEvent(e)});
   }
 
   getMediaInfo(mediaInfo: Object): Promise<*>{
+    OfflineManager._logger.debug('getMediaInfo', mediaInfo.entryId);
     return new Promise((resolve, reject)=>{
       if (this._downloads[mediaInfo.entryId]){
         return resolve(this._downloads[mediaInfo.entryId].sources.dash[0]);
@@ -63,12 +66,14 @@ export default class OfflineManager extends FakeEventTarget{
       const provider = new Provider(this._config.provider);
       return provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
+          OfflineManager._logger.debug('after provider.getMediaConfig');
           if( Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0){
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
             this._downloads[mediaInfo.entryId] = mediaConfig;
             return resolve(sourceData);
           }else{
+            OfflineManager._logger.debug('getMediaInfo error');
             return reject("getMediaInfo error");
           }
         });
@@ -76,22 +81,27 @@ export default class OfflineManager extends FakeEventTarget{
   }
 
   pause(entryId): Promise<*>{
+    OfflineManager._logger.debug('pause',entryId );
     return this._offlineManager.pause(entryId);
   }
 
   resume(entryId): Promise<*>{
+    OfflineManager._logger.debug('resume', entryId);
     return this._offlineManager.resume(entryId);
   }
 
   download(url: string, options: Object): Promise<*>{
+    OfflineManager._logger.debug('download', url);
     return this._offlineManager.download(url, options);
   }
 
   remove(entryId: string): Promise<*>{
+    OfflineManager._logger.debug('remove', entryId);
     return this._offlineManager.remove(entryId);
   }
 
   getMediaInfoFromDB(entryId: string): Promise<*>{
+    OfflineManager._logger.debug('getMediaInfoFromDB', entryId);
     return this._offlineManager.getDataByEntry(entryId);
   }
 
