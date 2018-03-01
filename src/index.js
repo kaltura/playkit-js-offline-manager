@@ -4,5 +4,5 @@ import OfflineManager from './offline-manager'
 declare var __VERSION__: string;
 declare var __NAME__: string;
 
-export {OfflineManager};
+export default OfflineManager;
 export {__VERSION__ as VERSION, __NAME__ as NAME};

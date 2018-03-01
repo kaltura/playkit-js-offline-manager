@@ -1,6 +1,6 @@
 //flow
 import shaka from 'shaka-player'
-import DBManager from "./db-manager";
+import DBManager from './db-manager';
 
 const downloadStates = {
   DOWNLOADING: 'downloading',
@@ -21,7 +21,7 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const PROGRESS_EVENT = 'progress';
 
-export default class ShakaOfflineWrapper {
+export default class ShakaOfflineWrapper{
 
   constructor(downloads) {
     this._dtgVideoElement = document.createElement('video');
