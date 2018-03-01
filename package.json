@@ -82,6 +82,7 @@
   },
   "homepage": "https://github.com/kaltura/playkit-js-offline-manager#readme",
   "dependencies": {
-    "idb": "^2.0.4"
+    "idb": "^2.0.4",
+    "js-logger": "^1.4.1"
   }
 }

@@ -22,7 +22,7 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 export const PROGRESS_EVENT = 'progress';
 
-export default class ShakaOfflineWrapper extends FakeEventTarget{
+export class ShakaOfflineWrapper extends FakeEventTarget{
 
   constructor(downloads) {
     super();
