@@ -1,5 +1,5 @@
 // @flow
-import ShakaOfflineWrapper from './shaka-offline-wrapper';
+import {ShakaOfflineWrapper,PROGRESS_EVENT} from "./shaka-offline-wrapper";
 import {Provider} from 'playkit-js-providers';
 import {Utils,FakeEventTarget,EventManager} from 'playkit-js';
 
@@ -47,7 +47,7 @@ export default class OfflineManager extends FakeEventTarget{
 
   _setOfflineAdapter(): void{
       this._offlineManager = new ShakaOfflineWrapper(this._downloads);
-      this._eventManager.listen(this._offlineManager,"progress",(e)=>{
+      this._eventManager.listen(this._offlineManager,PROGRESS_EVENT,(e)=>{
         this.dispatchEvent(e)});
   }
 
