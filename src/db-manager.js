@@ -1,6 +1,7 @@
 // @flow
 import idb from 'idb'
 import getLogger from "./utils/logger";
+import {Error} from 'playkit-js'
 
 const KEY_PATH: string = 'entryId';
 const ENTRIES_MAP_STORE_NAME: string = 'entriesMap';
@@ -44,8 +45,8 @@ export default class DBManager{
       item[KEY_PATH] = key;
       store.put(item);
       return tx.complete;
-    }).then(()=> {
-      //console.log('added item ' + key);
+    }).catch((error)=> {
+      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.CANNOT_ADD_ITEM, error));
     });
   }
 
@@ -55,6 +56,8 @@ export default class DBManager{
       const tx = db.transaction(storeName, 'readwrite');
       tx.objectStore(storeName).delete(key);
       return tx.complete;
+    }).catch(error => {
+      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
   }
 
@@ -65,6 +68,8 @@ export default class DBManager{
         .objectStore(storeName).get(entryId);
     }).then(obj =>{
       return obj;
+    }).catch(error => {
+      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
   }
 
@@ -75,6 +80,8 @@ export default class DBManager{
         .objectStore(storeName).getAll();
     }).then(allObjs => {
       return allObjs;
+    }).catch(error => {
+      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
   }
 

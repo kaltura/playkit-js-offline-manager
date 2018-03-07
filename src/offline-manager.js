@@ -1,13 +1,27 @@
 // @flow
-import {ShakaOfflineWrapper,PROGRESS_EVENT} from "./shaka-offline-wrapper";
+import {ShakaOfflineProvider, PROGRESS_EVENT} from "./shaka-offline-provider";
 import {Provider} from 'playkit-js-providers';
-import {Utils,FakeEventTarget,EventManager} from 'playkit-js';
-import getLogger, {getLogLevel, setLogLevel, LogLevel} from './utils/logger'
+import {Utils, FakeEventTarget, EventManager, Error, EventType as EVENTS, FakeEvent} from 'playkit-js';
+import getLogger, {setLogLevel, LogLevel} from './utils/logger'
+import DBManager from "./db-manager";
+
+
+const downloadStates = {
+  DOWNLOADING: 'downloading',
+  PAUSED: 'paused',
+  RESUMED: 'resumed',
+  ENDED: 'ended',
+  ERROR: 'error'
+};
+
+const ENTRIES_MAP_STORE_NAME = 'entriesMap';
+
+
 /**
  * Your class description.
  * @classdesc
  */
-export default class OfflineManager extends FakeEventTarget{
+export default class OfflineManager extends FakeEventTarget {
 
   static _logger: any = getLogger('OfflineManager');
 
@@ -31,75 +45,164 @@ export default class OfflineManager extends FakeEventTarget{
     }
     OfflineManager._logger.debug('offline manager created');
     super();
-    if (this._downloads){
+    if (this._downloads) {
       return;
     }
-    // this.config = config;
     this._downloads = {};
     this._config = config;
     this._eventManager = new EventManager();
+    this._dbManager = new DBManager({});
     this._setOfflineAdapter();
   }
 
-  _setOfflineAdapter(): void{
-      this._offlineManager = new ShakaOfflineWrapper(this._downloads, this._config);
-      this._eventManager.listen(this._offlineManager,PROGRESS_EVENT,(e)=>{
-        this.dispatchEvent(e)});
+  _setOfflineAdapter(): void {
+    this._offlineProvider = new ShakaOfflineProvider(this._downloads, this._config);
+    this._eventManager.listen(this._offlineProvider, PROGRESS_EVENT, (e) => {
+      this.dispatchEvent(e);
+    });
   }
 
-  getMediaInfo(mediaInfo: Object): Promise<*>{
-    OfflineManager._logger.debug('getMediaInfo', mediaInfo.entryId);
-    return new Promise((resolve, reject)=>{
-      if (this._downloads[mediaInfo.entryId]){
+  getMediaInfo(mediaInfo: Object): Promise<*> {
+    OfflineManager._logger.debug('get media info started', mediaInfo.entryId);
+    return new Promise((resolve) => {
+      if (this._downloads[mediaInfo.entryId]) {
         return resolve(this._downloads[mediaInfo.entryId].sources.dash[0]);
       }
       const provider = new Provider(this._config.provider);
       return provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
-          OfflineManager._logger.debug('after provider.getMediaConfig');
-          if( Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0){
+          if (Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
             this._downloads[mediaInfo.entryId] = mediaConfig;
+            OfflineManager._logger.debug('get media info ended');
             return resolve(sourceData);
-          }else{
-            OfflineManager._logger.debug('getMediaInfo error');
-            return reject("getMediaInfo error");
+          } else {
+            this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.COULD_NOT_GET_INFO_FROM_MEDIA_PROVIDER));
           }
         });
     })
   }
 
-  pause(entryId): Promise<*>{
-    OfflineManager._logger.debug('pause',entryId );
-    return this._offlineManager.pause(entryId);
+  pause(entryId): Promise<*> {
+    return new Promise((resolve) => {
+      OfflineManager._logger.debug('pause start', entryId);
+      let currentDownload = this._downloads[entryId];
+      if (!currentDownload) {
+        this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.ENTRY_DOES_NOT_EXIST, entryId)); //TODO LOG THIS (until background fetch is here)
+      } else {
+        if ([downloadStates.DOWNLOADING, downloadStates.RESUMED].includes(currentDownload.state)) {
+          return this._offlineProvider.pause(entryId).then(() => {
+            currentDownload.state = downloadStates.PAUSED;
+            return this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+              OfflineManager._logger.debug('paused ended', entryId);
+              resolve({
+                entryId: entryId,
+                state: downloadStates.PAUSE
+              });
+            });
+          }).catch((error) => {
+            this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.PAUSE_ABORTERD, error));
+          });
+        } else {
+          return resolve();
+        }
+      }
+    });
   }
 
-  resume(entryId): Promise<*>{
-    OfflineManager._logger.debug('resume', entryId);
-    return this._offlineManager.resume(entryId);
+  resume(entryId): Promise<*> {
+    OfflineManager._logger.debug('resume started', entryId);
+    return this._offlineProvider.setSessionData(entryId).then(() => {
+      let currentDownload = this._downloads[entryId];
+      if (currentDownload.state === downloadStates.PAUSED) {
+        currentDownload.state = downloadStates.RESUMED;
+        this._offlineProvider.resume(entryId).then((manifestDB) => {
+
+          currentDownload.state = [manifestDB.downloadStatus, manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
+          this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+            OfflineManager._logger.debug('resume ended / paused', entryId);
+            return Promise.resolve({
+              state: currentDownload.state,
+              entryId: entryId
+            });
+          })
+        });
+      }
+    }).catch((error) => {
+      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RESUME_REJECTED, error));
+    });
   }
 
-  download(url: string, options: Object): Promise<*>{
-    OfflineManager._logger.debug('download', url);
-    return this._offlineManager.download(url, options);
+  download(entryId: string, options: Object): Promise<*> {
+    return new Promise((resolve) => {
+      OfflineManager._logger.debug('download start', entryId);
+      let currentDownload = this._downloads[entryId];
+      if (currentDownload.state) {
+        this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.ENTRY_ALREADY_EXISTS, entryId));
+      }
+      this._doesEntryExists(entryId).then(existsInDB => {
+        if (existsInDB) {
+          this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.ENTRY_ALREADY_EXISTS, entryId));
+        }
+        currentDownload['state'] = downloadStates.DOWNLOADING;
+        this._offlineProvider.download(entryId, options)
+          .then(() => {
+            return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload))
+          })
+          .then(() => {
+            OfflineManager._logger.debug('download ended / paused', entryId);
+            resolve({
+              state: currentDownload.state,
+              entryId: entryId
+            });
+          }).catch((error) => {
+          this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error.detail));
+        });
+      });
+    });
   }
 
-  remove(entryId: string): Promise<*>{
-    OfflineManager._logger.debug('remove', entryId);
-    return this._offlineManager.remove(entryId);
+  remove(entryId: string): Promise<*> {
+    OfflineManager._logger.debug('remove start', entryId);
+    return this._offlineProvider.setSessionData(entryId).then(() => {
+      let currentDownload = this._downloads[entryId];
+      if (!currentDownload.state) {
+        this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND));
+      }
+      this._offlineProvider.remove(entryId).then(() => {
+        this._dbManager.remove(ENTRIES_MAP_STORE_NAME, entryId).then(() => {
+          delete this._downloads[entryId];
+          OfflineManager._logger.debug('remove ended', entryId);
+          return Promise.resolve({
+            state: currentDownload.state,
+            entryId: entryId
+          });
+        })
+      });
+    }).catch((error) => {
+      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_REJECTED, error.detail));
+    });
   }
 
-  getMediaInfoFromDB(entryId: string): Promise<*>{
+  _doesEntryExists(entryId): Promise<*> {
+    return new Promise((resolve) => {
+      return this.getMediaInfoFromDB(entryId).then((entry) => {
+        resolve(entry && entry.state);
+      })
+    })
+  }
+
+  getMediaInfoFromDB(entryId: string): Promise<*> {
     OfflineManager._logger.debug('getMediaInfoFromDB', entryId);
-    return this._offlineManager.getDataByEntry(entryId);
+    return this._offlineProvider.getDataByEntry(entryId);
   }
 
-  getAllDownloads(): Promise<*>{
-    return this._offlineManager.getAllDownloads();
+  getAllDownloads(): Promise<*> {
+    return this._offlineProvider.getAllDownloads();
   }
 
-  removeAll(): Promise<*>{
+  removeAll(): Promise<*> {
     let promises = [];
     return this.getAllDownloads().then(downloads => {
       downloads.forEach(download => {
@@ -110,7 +213,7 @@ export default class OfflineManager extends FakeEventTarget{
     });
   }
 
-  pauseAll(): Promise<*>{
+  pauseAll(): Promise<*> {
     let promises = [];
     return this.getAllDownloads().then(downloads => {
       downloads.forEach(download => {
@@ -118,6 +221,11 @@ export default class OfflineManager extends FakeEventTarget{
       });
       return Promise.all(promises);
     });
+  }
+
+  _onError(error: Error): void {
+    let event = new FakeEvent(EVENTS.ERROR, error);
+    this.dispatchEvent(event);
   }
 
   /**
@@ -140,10 +248,8 @@ export default class OfflineManager extends FakeEventTarget{
    * @returns {void}
    */
   reset(): void {
-  // Write logic
+    // Write logic
   }
 
 
 }
-
-
