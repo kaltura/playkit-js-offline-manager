@@ -140,15 +140,17 @@ export default class OfflineManager extends FakeEventTarget {
       let currentDownload = this._downloads[entryId];
       if (currentDownload.state) {
         this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.ENTRY_ALREADY_EXISTS, entryId));
+        return;
       }
       this._doesEntryExists(entryId).then(existsInDB => {
         if (existsInDB) {
           this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.ENTRY_ALREADY_EXISTS, entryId));
+          return;
         }
         currentDownload['state'] = downloadStates.DOWNLOADING;
         this._offlineProvider.download(entryId, options)
           .then(() => {
-            return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload))
+            return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
           })
           .then(() => {
             OfflineManager._logger.debug('download ended / paused', entryId);
@@ -157,7 +159,7 @@ export default class OfflineManager extends FakeEventTarget {
               entryId: entryId
             });
           }).catch((error) => {
-          this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error.detail));
+          this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
         });
       });
     });
@@ -181,7 +183,7 @@ export default class OfflineManager extends FakeEventTarget {
         })
       });
     }).catch((error) => {
-      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_REJECTED, error.detail));
+      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_REJECTED, error));
     });
   }
 
