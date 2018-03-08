@@ -16,7 +16,7 @@ const downloadStates = {
 
 const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
-
+const DOWNLOAD_PARAM = '?playbackType=offline';
 /**
  * Your class description.
  * @classdesc
@@ -118,7 +118,6 @@ export default class OfflineManager extends FakeEventTarget {
       if (currentDownload.state === downloadStates.PAUSED) {
         currentDownload.state = downloadStates.RESUMED;
         this._offlineProvider.resume(entryId).then((manifestDB) => {
-
           currentDownload.state = [manifestDB.downloadStatus, manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
           this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
             OfflineManager._logger.debug('resume ended / paused', entryId);
@@ -132,6 +131,11 @@ export default class OfflineManager extends FakeEventTarget {
     }).catch((error) => {
       this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RESUME_REJECTED, error));
     });
+  }
+
+  _addDownloadParam(entryId): void{
+    let currentDownload = this._downloads[entryId];
+    currentDownload.sources.dash[0].url = currentDownload.sources.dash[0].url+DOWNLOAD_PARAM;
   }
 
   download(entryId: string, options: Object): Promise<*> {
@@ -148,6 +152,7 @@ export default class OfflineManager extends FakeEventTarget {
           return;
         }
         currentDownload['state'] = downloadStates.DOWNLOADING;
+        this._addDownloadParam(entryId);
         this._offlineProvider.download(entryId, options)
           .then(() => {
             return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
