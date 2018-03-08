@@ -48,6 +48,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
           ShakaOfflineProvider._logger.debug('after storage.store', entryId);
           currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
           currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
+          currentDownload.expiration = offlineManifest.expiration;
           resolve();
         }).catch((error) => {
           reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error.detail));
