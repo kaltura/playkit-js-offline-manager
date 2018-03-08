@@ -75,7 +75,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     // in case of removing a download in progress, we have to pause the download and wait for the
     // store promise to be resolved. Only then we will have the shaka offline storage uri, so it can be deleted
     // from the shaka indexed db as well.
-    let pausePromise = this.pause(entryId);
+    let pausePromise = currentDownload.state === downloadStates.ENDED ? Promise.resolve() : this.pause(entryId);
     let storePormise = currentDownload.storePromise || Promise.resolve();
     return Promise.all([pausePromise, storePormise]).then(()=>{
       return currentDownload.storage.remove(currentDownload.sources.dash[0].url);
