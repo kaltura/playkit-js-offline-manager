@@ -24,16 +24,30 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     ShakaOfflineProvider._logger.debug('ShakaOfflineProvider created');
     this._dtgVideoElement = document.createElement('video');
     shaka.polyfill.installAll();
-
     this._dtgShaka = new shaka.Player(this._dtgVideoElement);
+    this._configureShakaPlayer();
     this._dtgShaka.addEventListener(EVENTS.ERROR, this._onShakaError);
-
+    // todo remove this as part of the classes refactor, adding the offline provider config should be on "item.prepareforstorage()"
     this._dbManager = new DBManager({
       adapterName: 'shaka',
       adapterVersion: "",//player.version,
       playerVersion: ""//player.version
     });
     this._downloads = downloads;
+  }
+
+  _configureShakaPlayer(): void{
+    this._dtgShaka.configure({
+      streaming: {
+        retryParameters: {
+          timeout: 0,       // timeout in ms, after which we abort a request; 0 means never
+          maxAttempts: 100,   // the maximum number of requests before we fail
+          baseDelay: 1000,  // the base delay in ms between retries
+          backoffFactor: 2, // the multiplicative backoff factor between retries
+          fuzzFactor: 0.5  // the fuzz factor to apply to each retry delay
+        }
+      }
+    });
   }
 
   download(entryId: String, options): Promise<*> {
@@ -45,14 +59,14 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       // store promise is saved for canceling a download situation
       currentDownload['storePromise'] = currentDownload.storage.store(currentDownload.sources.dash[0].url, {});
       currentDownload['storePromise'].then(offlineManifest => {
-          ShakaOfflineProvider._logger.debug('after storage.store', entryId);
-          currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
-          currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
-          currentDownload.expiration = offlineManifest.expiration;
-          resolve();
-        }).catch((error) => {
-          reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error.detail));
-        });
+        ShakaOfflineProvider._logger.debug('after storage.store', entryId);
+        currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
+        currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
+        currentDownload.expiration = offlineManifest.expiration;
+        resolve();
+      }).catch((error) => {
+        reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error.detail));
+      });
     })
   }
 
@@ -77,7 +91,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     // from the shaka indexed db as well.
     let pausePromise = currentDownload.state === downloadStates.ENDED ? Promise.resolve() : this.pause(entryId);
     let storePormise = currentDownload.storePromise || Promise.resolve();
-    return Promise.all([pausePromise, storePormise]).then(()=>{
+    return Promise.all([pausePromise, storePormise]).then(() => {
       return currentDownload.storage.remove(currentDownload.sources.dash[0].url);
     });
   }
@@ -155,10 +169,10 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   }
 
   _trackSelectionCallback(bitrate = 0, language = null) {
-    return function(tracks){
+    return function (tracks) {
       const langFilteredTracks = tracks.filter(track => track.language === language);
       tracks = langFilteredTracks.length > 0 ? langFilteredTracks : tracks;
-      let closest = tracks.reduce(function(prev, curr) {
+      let closest = tracks.reduce(function (prev, curr) {
         return (Math.abs(curr.bandwidth - bitrate) < Math.abs(prev.bandwidth - bitrate) ? curr : prev);
       });
       return [closest];
@@ -172,10 +186,10 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       usePersistentLicense: true,
       progressCallback: this._setDownloadProgress(entryId),
     };
-     if (options && (options.bitrate || options.language)) {
+    if (options && (options.bitrate || options.language)) {
       configuration["trackSelectionCallback"] = this._trackSelectionCallback(options.bitrate, options.language);
-     }
-     storage.configure(configuration);
+    }
+    storage.configure(configuration);
     return storage;
   }
 
