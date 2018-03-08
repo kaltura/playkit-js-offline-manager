@@ -225,7 +225,7 @@ export default class OfflineManager extends FakeEventTarget {
   }
 
   getExpiration(entryId): Promise<*> {
-    return getMediaInfoFromDB(entryId).then(data => {
+    return this.getDownloadedMediaInfo(entryId).then(data => {
       return data.expiration;
     });
   }
