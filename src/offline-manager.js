@@ -187,20 +187,21 @@ export default class OfflineManager extends FakeEventTarget {
 
   _doesEntryExists(entryId): Promise<*> {
     return new Promise((resolve) => {
-      return this.getMediaInfoFromDB(entryId).then((entry) => {
+      return this.getDownloadedMediaInfo(entryId).then((entry) => {
         resolve(entry && entry.state);
       })
     })
   }
 
-  getMediaInfoFromDB(entryId: string): Promise<*> {
-    OfflineManager._logger.debug('getMediaInfoFromDB', entryId);
+  getDownloadedMediaInfo(entryId: string): Promise<*> {
+    OfflineManager._logger.debug('getDownloadedMediaInfo', entryId);
     return this._offlineProvider.getDataByEntry(entryId);
   }
 
   getAllDownloads(): Promise<*> {
     return this._offlineProvider.getAllDownloads();
   }
+
 
   removeAll(): Promise<*> {
     let promises = [];
@@ -220,6 +221,12 @@ export default class OfflineManager extends FakeEventTarget {
         promises.push(this.pause(download.entryId));
       });
       return Promise.all(promises);
+    });
+  }
+
+  getExpiration(entryId): Promise<*> {
+    return getMediaInfoFromDB(entryId).then(data => {
+      return data.expiration;
     });
   }
 
