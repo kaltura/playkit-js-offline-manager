@@ -96,6 +96,17 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     });
   }
 
+  renewLicense(entryId): Promise<*>{
+    ShakaOfflineProvider._logger.debug('renewLicense', entryId);
+    const currentDownload = this._downloads[entryId];
+    this._configureDrmIfNeeded(entryId);
+    currentDownload['storage'] = this._initStorage(entryId, {});
+    return currentDownload.storage.renewLicense(currentDownload.sources.dash[0].url).then(manifestDB => {
+      currentDownload.expiration = manifestDB.expiration;
+      return Promise.resolve(manifestDB.expiration);
+    });
+  }
+
   getDataByEntry(entryId): Promise<*> {
     return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
   }
