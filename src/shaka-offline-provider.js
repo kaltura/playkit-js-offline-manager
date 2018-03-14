@@ -70,7 +70,6 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     })
   }
 
-
   pause(entryId: string): Promise<*> {
     ShakaOfflineProvider._logger.debug('pause', entryId);
     const currentDownload = this._downloads[entryId];
@@ -151,7 +150,6 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     }
   }
 
-
   prepareItemForStorage(object) {
     const keysToDelete = ["storage", "url", "mimetype", "storePromise"];
     let storeObj = Object.assign({}, object);
@@ -163,30 +161,42 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     return storeObj;
   }
 
-
-  setSessionData(entryId): Promise<*> {
+  setSessionData(entryId, newMediaInfo): Promise<*> {
     ShakaOfflineProvider._logger.debug('set session data', entryId);
     if (this._downloads[entryId]) {
+      this._updateDrmDataIfNeeded(entryId, newMediaInfo);
       return Promise.resolve();
     }
     return this.getDataByEntry(entryId).then(dbData => {
       let data = Object.assign({}, dbData);
       data['storage'] = this._initStorage(entryId);
       this._downloads[entryId] = data;
+      this._updateDrmDataIfNeeded(entryId);
       return Promise.resolve();
     }).catch(error => {
       Promise.reject(error);
     });
   }
 
+  _updateDrmDataIfNeeded(entryId, newMediaInfo){
+    if (!newMediaInfo){
+      return;
+    }
+    let currentDownload_ = this._downloads[entryId];
+    if (currentDownload_.sources.dash[0].drmData && newMediaInfo.sources.dash[0].drmData){
+      currentDownload_.sources.dash[0].drmData = newMediaInfo.sources.dash[0].drmData;
+    }
+  }
+
   _trackSelectionCallback(bitrate = 0, language = null) {
     return function (tracks) {
-      const langFilteredTracks = tracks.filter(track => track.language === language);
+      const textTracks = tracks.filter(track => { return track.type === 'text'});
+      const langFilteredTracks = tracks.filter(track => { return track.language === language && track.type !== 'text'});
       tracks = langFilteredTracks.length > 0 ? langFilteredTracks : tracks;
       let closest = tracks.reduce(function (prev, curr) {
         return (Math.abs(curr.bandwidth - bitrate) < Math.abs(prev.bandwidth - bitrate) ? curr : prev);
       });
-      return [closest];
+      return [closest].concat(textTracks);
     }
   }
 

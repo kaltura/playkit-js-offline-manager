@@ -84,6 +84,7 @@ export default class OfflineManager extends FakeEventTarget {
     })
   }
 
+
   pause(entryId): Promise<*> {
     return new Promise((resolve) => {
       OfflineManager._logger.debug('pause start', entryId);
@@ -133,9 +134,38 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
-  _addDownloadParam(entryId): void{
+  renewLicense(entryId): Promise<*> {
+    OfflineManager._logger.debug('renew license started', entryId);
+    const provider = new Provider(this._config.provider);
+    return provider.getMediaConfig({
+      entryId: entryId
+    }).then(mediaConfig => {
+      if (!Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
+        this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RENEW_LICENSE_FAILED, 'not enough data from the media provider'));
+      }
+      return this._offlineProvider.setSessionData(entryId, mediaConfig).then(() => {
+      let currentDownload = this._downloads[entryId];
+      if (currentDownload.state === downloadStates.ENDED) {
+        this._offlineProvider.renewLicense(entryId).then((expiration) => {
+          this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+            OfflineManager._logger.debug('renew license ended', entryId);
+            return Promise.resolve({
+              state: currentDownload.state,
+              entryId: entryId,
+              expiration: expiration
+            });
+          })
+        });
+      }
+    })
+    }).catch((error) => {
+      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RENEW_LICENSE_FAILED, error));
+    });
+  }
+
+  _addDownloadParam(entryId): void {
     let currentDownload = this._downloads[entryId];
-    currentDownload.sources.dash[0].url = currentDownload.sources.dash[0].url+DOWNLOAD_PARAM;
+    currentDownload.sources.dash[0].url = currentDownload.sources.dash[0].url + DOWNLOAD_PARAM;
   }
 
   download(entryId: string, options: Object): Promise<*> {
