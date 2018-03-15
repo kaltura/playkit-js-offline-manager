@@ -158,6 +158,9 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         delete storeObj[key];
       }
     }
+    let selectedSource = object.sources.dash[0];
+    selectedSource['localSource'] = true;
+    object.sources.dash = [selectedSource]; // storing only one relevant source
     return storeObj;
   }
 
