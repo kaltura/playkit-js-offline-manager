@@ -44,6 +44,12 @@ If no language or bitrate is specified, it will select the lowest bitrate and a 
 ```javascript
 // already implemented, write a guide
 ```
+
+## writing a plugin? how to know you are playing an offline source?
+```javascript
+// already implemented, write a guide
+```
+
 ## Error handling
 
 ```javascript
