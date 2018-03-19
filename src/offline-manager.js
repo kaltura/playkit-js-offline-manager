@@ -294,6 +294,4 @@ export default class OfflineManager extends FakeEventTarget {
   reset(): void {
     // Write logic
   }
-
-
 }

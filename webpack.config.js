@@ -30,7 +30,8 @@ module.exports = {
   output: {
     path: __dirname + "/dist",
     filename: '[name].js',
-    library: ["playkit", "OfflineManager"],
+    library: ["KalturaPlayer", "OfflineManager"],
+    libraryExport: "default",
     libraryTarget: "umd",
     devtoolModuleFilenameTemplate: "./offline-manager/[resource-path]"
   },
@@ -76,19 +77,19 @@ module.exports = {
       commonjs: "playkit-js",
       commonjs2: "playkit-js",
       amd: "playkit-js",
-      root: ["playkit", "core"]
+      root: ["KalturaPlayer", "core"]
     },
     "shaka-player": {
       commonjs: "shaka-player",
       commonjs2: "shaka-player",
       amd: "shaka-player",
-      root: "shaka"
+      root: ["KalturaPlayer", "shaka"]
     },
     "playkit-js-providers": {
       commonjs: "playkit-js-providers",
       commonjs2: "playkit-js-providers",
       amd: "playkit-js-providers",
-      root: ["playkit", "providers"]
+      root: ["KalturaPlayer", "providers"]
     }
   }
 };
