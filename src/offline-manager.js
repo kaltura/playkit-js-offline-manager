@@ -6,13 +6,7 @@ import getLogger, {setLogLevel, LogLevel} from './utils/logger'
 import DBManager from "./db-manager";
 
 
-const downloadStates = {
-  DOWNLOADING: 'downloading',
-  PAUSED: 'paused',
-  RESUMED: 'resumed',
-  ENDED: 'ended',
-  ERROR: 'error'
-};
+
 
 const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
@@ -53,10 +47,16 @@ export default class OfflineManager extends FakeEventTarget {
     this._eventManager = new EventManager();
     this._dbManager = new DBManager({});
     this._setOfflineAdapter();
+    this._setOfflineItemType();
+  }
+
+  _setOfflineItem(): void {
+    this._offlineItemType = 'shaka';
   }
 
   _setOfflineAdapter(): void {
     this._offlineProvider = new ShakaOfflineProvider(this._downloads, this._config);
+
     this._eventManager.listen(this._offlineProvider, PROGRESS_EVENT, (e) => {
       this.dispatchEvent(e);
     });
@@ -74,7 +74,7 @@ export default class OfflineManager extends FakeEventTarget {
           if (Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
-            this._downloads[mediaInfo.entryId] = mediaConfig;
+            this._downloads[mediaInfo.entryId] = new itemFactory(this._offlineItemType,mediaConfig);
             OfflineManager._logger.debug('get media info ended');
             return resolve(sourceData);
           } else {
