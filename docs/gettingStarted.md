@@ -32,9 +32,9 @@ let offlineManager = new KalturaPlayer.OfflineManager(configuration)
 
 You can read more about the [configuration](https://github.com/kaltura/kaltura-player-js/blob/master/docs/configuration.md) in the Kaltura player configuration [document](ttps://github.com/kaltura/kaltura-player-js/blob/master/docs/configuration.md).
 
-Now, you can use the offline manager [API](./API.md) to download, resume and perform other actions.
+Now, you can use the offline manager [API](./api.md) to download, resume and perform other actions.
 
-> API documentation can be found [here](./API.md).
+> API documentation can be found [here](./api.md).
 
 Here is an example to download media and pause it.
 
