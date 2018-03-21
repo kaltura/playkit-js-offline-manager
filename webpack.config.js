@@ -31,7 +31,6 @@ module.exports = {
     path: __dirname + "/dist",
     filename: '[name].js',
     library: ["KalturaPlayer", "OfflineManager"],
-    libraryExport: "default",
     libraryTarget: "umd",
     devtoolModuleFilenameTemplate: "./offline-manager/[resource-path]"
   },
