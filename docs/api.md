@@ -26,10 +26,10 @@ Here you will find a list of API calls and handling progress and error events.
 If no options object is provided, the download process will choose one audio track and one video track.
 The options object is consisted of two values:
 ```javascript
-    const options = {
-		language: 'es',
-		bitrate: 7900446
-    }
+const options = {
+	language: 'es',
+  bitrate: 7900446
+}
 ```
 The download manager will try to find a stream that matches the value of language. Then, it will find a video track with the closest bitrate to the one sent.
 If no language or bitrate is specified, it will select the lowest bitrate and a random audio track.
@@ -41,9 +41,10 @@ Here is an example of how to listen to the progress event.
 ```javascript
 let downloadManager = new KalturaPlayer.downloadManager(playerConfig);
 downloadManager.addEventListener("progress", event => {
-    let progressData = event.payload.detail;
+  let progressData = event.payload.detail;
 	console.info("entryId", progressData.entryId);
 	console.info("progress", progressData.progress);
+});
 ```
 
 ## Error handling
@@ -62,4 +63,5 @@ downloadManager.addEventListener("error", event => {
 	console.log('The error category is: ' + error.category);
 	console.log('The error code is: ' + error.code);
 	console.log('The error data is', error.data);
+});
 ```
