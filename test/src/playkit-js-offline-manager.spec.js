@@ -4,7 +4,7 @@ import * as TestUtils from 'playkit-js/test/src/utils/test-utils'
 
 const targetId = 'player-placeholder_offline-manager.spec';
 
-describe('OfflineManagerPlugin', function () {
+describe('OfflineManager', function () {
   let player;
   const config = {
     sources: {

@@ -1,6 +1,6 @@
 let webpackConfig = require('./webpack.config.js');
-//Need to remove externals otherwise they won't be included in test
-delete webpackConfig.externals;
+// Need to remove externals otherwise they won't be included in test
+// delete webpackConfig.externals;
 // Need to define inline source maps when using karma
 webpackConfig.devtool = 'inline-source-map';
 
@@ -28,6 +28,7 @@ module.exports = function (config) {
       'mocha'
     ],
     files: [
+      { pattern: 'node_modules/playkit-js', type: 'module'},
       'test/setup/karma.js'
     ],
     preprocessors: {
@@ -50,8 +51,7 @@ module.exports = function (config) {
     },
     client: {
       mocha: {
-        reporter: 'html',
-        timeout: 50000
+        reporter: 'html'
       }
     }
   };
