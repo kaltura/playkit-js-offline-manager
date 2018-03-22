@@ -21,6 +21,7 @@ Here you will find a list of API calls and handling progress and error events.
 |`getAllDownloads`|-|`promise<*>`| getting a list of all the downloaded entries|
 |`removeAll`|-|`promise<*>`| removing all the entries from the database|
 |`renewLicense`|`entryId: string`|`promise<*>`| renew an offline license|
+|`getExpiration`|`entryId: string`|`promise<*>`| a unix timestamp with the license expiration date|
 
 ## Download Options
 If no options object is provided, the download process will choose one audio track and one video track.
