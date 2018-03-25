@@ -72,6 +72,7 @@ export default class OfflineManager extends FakeEventTarget {
       return provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
           if (Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
+            mediaConfig = this._removeNotRelevantSources(mediaConfig, 'dash');
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
             this._downloads[mediaInfo.entryId] = mediaConfig;
@@ -83,6 +84,26 @@ export default class OfflineManager extends FakeEventTarget {
         });
     })
   }
+
+
+  /**
+   * Removing  sources that we are not downloading from the media config
+   * currently as we are having only dash adapter, we will take the first dash source.
+   * @param {Object} mediaConfig
+   * @private
+   */
+  _removeNotRelevantSources(mediaConfig: Object, relevantSourceType: string): Object {
+    for (let key in mediaConfig.sources){
+      let source = mediaConfig.sources[key];
+      if (key === relevantSourceType){
+        source = source.slice(1);
+      }else{
+        delete mediaConfig.sources[key];
+      }
+    }
+    return Object.assign({},mediaConfig);
+  }
+
 
 
   pause(entryId): Promise<*> {
