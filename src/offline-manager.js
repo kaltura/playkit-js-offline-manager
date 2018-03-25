@@ -17,6 +17,8 @@ const downloadStates = {
 const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const DOWNLOAD_PARAM = '?playbackType=offline';
+
+const SOURCE_TYPE = 'dash';
 /**
  * Your class description.
  * @classdesc
@@ -72,7 +74,7 @@ export default class OfflineManager extends FakeEventTarget {
       return provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
           if (Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
-            mediaConfig = this._removeNotRelevantSources(mediaConfig, 'dash');
+            mediaConfig = this._removeNotRelevantSources(mediaConfig, SOURCE_TYPE);
             let sourceData = mediaConfig.sources.dash[0];
             sourceData.entryId = mediaInfo.entryId;
             this._downloads[mediaInfo.entryId] = mediaConfig;
