@@ -55,6 +55,7 @@ export default class OfflineManager extends FakeEventTarget {
     this._eventManager = new EventManager();
     this._dbManager = new DBManager({});
     this._setOfflineAdapter();
+    this._isDBSynced = false;
   }
 
   _setOfflineAdapter(): void {
@@ -95,17 +96,16 @@ export default class OfflineManager extends FakeEventTarget {
    * @private
    */
   _removeNotRelevantSources(mediaConfig: Object, relevantSourceType: string): Object {
-    for (let key in mediaConfig.sources){
+    for (let key in mediaConfig.sources) {
       let source = mediaConfig.sources[key];
-      if (key === relevantSourceType){
+      if (key === relevantSourceType) {
         source = source.slice(1);
-      }else{
+      } else {
         delete mediaConfig.sources[key];
       }
     }
-    return Object.assign({},mediaConfig);
+    return Object.assign({}, mediaConfig);
   }
-
 
 
   pause(entryId): Promise<*> {
@@ -167,20 +167,20 @@ export default class OfflineManager extends FakeEventTarget {
         this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RENEW_LICENSE_FAILED, 'not enough data from the media provider'));
       }
       return this._offlineProvider.setSessionData(entryId, mediaConfig).then(() => {
-      let currentDownload = this._downloads[entryId];
-      if (currentDownload.state === downloadStates.ENDED) {
-        this._offlineProvider.renewLicense(entryId).then((expiration) => {
-          this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
-            OfflineManager._logger.debug('renew license ended', entryId);
-            return Promise.resolve({
-              state: currentDownload.state,
-              entryId: entryId,
-              expiration: expiration
-            });
-          })
-        });
-      }
-    })
+        let currentDownload = this._downloads[entryId];
+        if (currentDownload.state === downloadStates.ENDED) {
+          this._offlineProvider.renewLicense(entryId).then((expiration) => {
+            this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+              OfflineManager._logger.debug('renew license ended', entryId);
+              return Promise.resolve({
+                state: currentDownload.state,
+                entryId: entryId,
+                expiration: expiration
+              });
+            })
+          });
+        }
+      })
     }).catch((error) => {
       this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RENEW_LICENSE_FAILED, error));
     });
@@ -259,7 +259,18 @@ export default class OfflineManager extends FakeEventTarget {
   }
 
   getAllDownloads(): Promise<*> {
-    return this._offlineProvider.getAllDownloads();
+    if (this._isDBSynced) {
+      return Promise.resolve(Object.values(this._downloads));
+    }
+    return this._offlineProvider.getAllDownloads().then(dbDownloads => {
+      this._isDBSynced = true;
+      dbDownloads.forEach((download) => {
+        if (!this._downloads[download.id]) {
+          this._downloads[download.id] = download;
+        }
+      });
+      return Promise.resolve(Object.values(this._downloads));
+    });
   }
 
 
