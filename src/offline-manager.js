@@ -88,7 +88,6 @@ export default class OfflineManager extends FakeEventTarget {
     })
   }
 
-
   /**
    * Removing  sources that we are not downloading from the media config
    * currently as we are having only dash adapter, we will take the first dash source.
@@ -258,6 +257,10 @@ export default class OfflineManager extends FakeEventTarget {
     return this._offlineProvider.getDataByEntry(entryId);
   }
 
+  /**
+   * get all ongoing and ended downloads.
+   * @returns {Promise<*>}
+   */
   getAllDownloads(): Promise<*> {
     if (this._isDBSynced) {
       return Promise.resolve(Object.values(this._downloads));
@@ -273,7 +276,10 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
-
+  /**
+   * remove all downloads
+   * @returns {Promise<*>}
+   */
   removeAll(): Promise<*> {
     let promises = [];
     return this.getAllDownloads().then(downloads => {
@@ -285,6 +291,10 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
+  /**
+   * pause all on going downloads
+   * @returns {Promise<*>}
+   */
   pauseAll(): Promise<*> {
     let promises = [];
     return this.getAllDownloads().then(downloads => {
@@ -295,7 +305,37 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
-  getExpiration(entryId): Promise<*> {
+  /**
+   * returns all downloads that were not finished yet (except status ended)
+   * @private
+   */
+  _getAllActiveDownloads(): Promise<Array<*>> {
+    this.getAllDownloads().then(downloadsArr => {
+      return downloadsArr.filter(download => download.state != downloadStates.ENDED)
+    })
+  }
+
+  /**
+   * Resumes all paused downloads
+   * @returns {Promise<*>} promise that resolves when all the downloads
+   */
+  resumeAll(): Promise<*> {
+    let promises = [];
+    return this._getAllActiveDownloads().then(downloads => {
+      downloads.forEach(download => {
+        if (download.state != download)
+          promises.push(this.resume(download.entryId));
+      });
+      return Promise.all(promises);
+    });
+  }
+
+  /**
+   *
+   * @param {string} entryId entry id to get expiration of
+   * @returns {Promise<*>}
+   */
+  getExpiration(entryId: string): Promise<*> {
     return this.getDownloadedMediaInfo(entryId).then(data => {
       return data.expiration;
     });
