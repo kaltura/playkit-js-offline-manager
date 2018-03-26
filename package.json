@@ -1,6 +1,6 @@
 {
   "name": "playkit-js-offline-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/playkit-offline-manager.js",
   "scripts": {
     "clean": "rm -rf ./dist",
@@ -54,8 +54,8 @@
     "karma-webpack": "^2.0.2",
     "mocha": "^3.2.0",
     "mocha-cli": "^1.0.1",
-    "playkit-js": "https://github.com/kaltura/playkit-js.git#master",
-    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#master",
+    "playkit-js": "https://github.com/kaltura/playkit-js.git#v0.21.8",
+    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#v2.2.0",
     "pre-push": "^0.1.1",
     "shaka-player": "2.3.2",
     "sinon": "^2.0.0",
@@ -67,8 +67,8 @@
     "webpack-dev-server": "latest"
   },
   "peerDependencies": {
-    "playkit-js": "https://github.com/kaltura/playkit-js.git#master",
-    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#master",
+    "playkit-js": "https://github.com/kaltura/playkit-js.git#v0.21.8",
+    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#v2.2.0",
     "shaka-player": "2.3.2"
   },
   "keywords": [],
