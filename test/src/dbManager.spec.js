@@ -1,6 +1,7 @@
 import '../../src/index.js'
 import {loadPlayer} from 'playkit-js'
 import * as TestUtils from 'playkit-js/test/src/utils/test-utils'
+import DBManager from '../../src/db-manager'
 
 const targetId = 'player-placeholder_offline-manager.spec';
 
@@ -15,8 +16,9 @@ describe('OfflineManager', function () {
       ]
     }
   };
-
+  var dbManager;
   before(function () {
+    dbManager = new DBManager({});
   });
 
   afterEach(function () {
