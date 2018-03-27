@@ -65,7 +65,7 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
-  getMediaInfo(mediaInfo: Object): Promise<*> {
+  getMediaConfig(mediaInfo: Object): Promise<*> {
     OfflineManager._logger.debug('get media info started', mediaInfo.entryId);
     return new Promise((resolve) => {
       if (this._downloads[mediaInfo.entryId]) {
@@ -247,14 +247,14 @@ export default class OfflineManager extends FakeEventTarget {
 
   _doesEntryExists(entryId): Promise<*> {
     return new Promise((resolve) => {
-      return this.getDownloadedMediaInfo(entryId).then((entry) => {
+      return this.getDownloadedMediaConfig(entryId).then((entry) => {
         resolve(entry && entry.state);
       })
     })
   }
 
-  getDownloadedMediaInfo(entryId: string): Promise<*> {
-    OfflineManager._logger.debug('getDownloadedMediaInfo', entryId);
+  getDownloadedMediaConfig(entryId: string): Promise<*> {
+    OfflineManager._logger.debug('getDownloadedMediaConfig', entryId);
     return this._offlineProvider.getDataByEntry(entryId);
   }
 
@@ -296,7 +296,7 @@ export default class OfflineManager extends FakeEventTarget {
   }
 
   getExpiration(entryId): Promise<*> {
-    return this.getDownloadedMediaInfo(entryId).then(data => {
+    return this.getDownloadedMediaConfig(entryId).then(data => {
       return data.expiration;
     });
   }
