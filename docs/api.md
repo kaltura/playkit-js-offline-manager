@@ -1,44 +1,47 @@
-# Offline manager API
-Here you will find a list of API calls and handling progress and error events.
+# Offline Manager APIs
+
+Here you'll find a list of API calls and handling progress and error events.
 
  - [API list](#API-list)
  - [Progress](#progress)
  - [Download options object](#download-options)
  - [Error](#error-handling)
 
-## API list
+## API List
 
 | Name | Params | Returns | Description |
 |--|--|--|--|
-|`getMediaInfo`|`MediaInfo object`|Provider info object|Getting info per an entry - DRM info, manifest url etc. The information will be used by the download manager in the download process|
+|`getMediaInfo`|`MediaInfo object`|Provider info object|Getting information per entry - DRM info, manifest url etc. The information will be used by the Download Manager in the download process|
 | `download` | `entryId: string`, `options` - optional| `promise<*>` | Start downloading an entry |
 |`pause`|`entryId: string`|`promise<*>`| Pausing an ongoing download
 |`resume`|`entryId: string`|`promise<*>`| Resuming the download of an entry
-|`remove`|`entryId: string`|`promise<*>`| Removing a stored / partially stored entry. This also can be used when wanting to cancel a download which is still in progress.
+|`remove`|`entryId: string`|`promise<*>`| Removing a stored / partially-stored entry. This also can be used when you want to cancel a download that's still in progress.
 |`resumeAll`|-|`promise<*>`|Resuming all downloads|
 |`pauseAll`|-|`promise<*>`| Pausing all downloads|
-|`getDownloadedMediaInfo`|`entryId: string`|`promise<*>`|Getting stored metadata per an entry. The object contains license expiration timestamp, name, description, download status, size and other useful data about the entry.|
-|`getAllDownloads`|-|`promise<*>`| getting a list of all the downloaded entries|
-|`removeAll`|-|`promise<*>`| removing all the entries from the database|
-|`renewLicense`|`entryId: string`|`promise<*>`| renew an offline license|
-|`getExpiration`|`entryId: string`|`promise<*>`| a unix timestamp with the license expiration date|
+|`getDownloadedMediaInfo`|`entryId: string`|`promise<*>`|Getting stored metadata per entry. The object contains the license expiration timestamp, name, description, download status, size and other useful data about the entry.|
+|`getAllDownloads`|-|`promise<*>`| Getting a list of all downloaded entries.|
+|`removeAll`|-|`promise<*>`| Removing all entries from the database.|
+|`renewLicense`|`entryId: string`|`promise<*>`| Renew an offline license.|
+|`getExpiration`|`entryId: string`|`promise<*>`| A unix timestamp with the license expiration date.|
 
-## Download Options
+## Download Options  
+
 If no options object is provided, the download process will choose one audio track and one video track.
-The options object is consisted of two values:
+The options object consists of two values:
 ```javascript
 const options = {
 	language: 'es',
   bitrate: 7900446
 }
 ```
-The download manager will try to find a stream that matches the value of language. Then, it will find a video track with the closest bitrate to the one sent.
+The Download Manager will try to find a stream that matches the value of the language. Then, it will find a video track with the closest bitrate to the one sent.
 If no language or bitrate is specified, it will select the lowest bitrate and a random audio track.
 
-## Progress
-The download manager fires progress events (for each download).
-The progress event has the entry id string, and the progress (in percentage).
-Here is an example of how to listen to the progress event.
+## Progress  
+
+The Download Manager fires progress events (for each download). The progress event has the entry ID string, and the progress (in percentage).
+
+Here's an example of how to listen to the progress event:
 ```javascript
 let downloadManager = new KalturaPlayer.downloadManager(playerConfig);
 downloadManager.addEventListener("progress", event => {
@@ -48,14 +51,13 @@ downloadManager.addEventListener("progress", event => {
 });
 ```
 
-## Error handling
+## Error Handling
 
-The download manager fires error events.
-The errors are in the same structure of the Kaltura player errors.
+The Download Manager fires error events. The errors are in the same structure as the Kaltura Player errors.
 
 > Read more about the Kaltura player errors [here](https://github.com/kaltura/kaltura-player-js/blob/master/docs/errors.md).
 
-Here is an example of how to listen to an error event:
+Here's an example of how to listen to an error event:
 ```javascript
 KalturaPlayer.downloadManager(playerConfig);
 downloadManager.addEventListener("error", event => {
