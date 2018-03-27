@@ -41,11 +41,11 @@ You can now use the Offline Manager [API](./api.md) to download, resume and perf
 Here's an example to download media and pause it.
 
 ```javascript
-const ottMediaObj = {
+const ottMediaInfo = {
 	entryId: SOME_GREAT_ENTRY_ID
 	}
 // First, you'll get the media info.
-downloadManager.getMediaConfig(ottMediaObj).then( res => {
+downloadManager.getMediaConfig(ottMediaInfo).then( res => {
   console.info("media info response:", res);
   // After the download manager has the info, you can download it.
   downloadManager.download(SOME_GREAT_ENTRY_ID);
