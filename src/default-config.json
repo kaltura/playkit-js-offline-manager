@@ -1,0 +1,9 @@
+{
+  "db": {
+    "name": "offline-manager",
+    "entriesMap": {
+      "storeName": "entriesMap",
+      "keyPath": "entryId"
+    }
+  }
+}

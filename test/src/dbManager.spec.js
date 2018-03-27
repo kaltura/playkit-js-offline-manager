@@ -5,20 +5,12 @@ import DBManager from '../../src/db-manager'
 
 const targetId = 'player-placeholder_offline-manager.spec';
 
-describe('OfflineManager', function () {
-  const config = {
-    sources: {
-      dash: [
-        {
-          mimetype: "video/mp4",
-          url: "http://www.html5videoplayer.net/videos/toystory.mp4"
-        }
-      ]
-    }
-  };
+describe('dbManager', function () {
+
   var dbManager;
   before(function () {
     dbManager = new DBManager({});
+    dbManager.open();
   });
 
   afterEach(function () {
@@ -27,7 +19,8 @@ describe('OfflineManager', function () {
   after(function () {
   });
 
-  it('should play mp4 stream with offline-manager plugin', (done) => {
+  it('should add item to the indexedDb', (done) => {
+    dbManager.add("")
     done();
   });
 });

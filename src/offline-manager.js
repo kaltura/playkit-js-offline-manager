@@ -4,6 +4,7 @@ import {Provider} from 'playkit-js-providers';
 import {Utils, FakeEventTarget, EventManager, Error, EventType as EVENTS, FakeEvent} from 'playkit-js';
 import getLogger, {setLogLevel, LogLevel} from './utils/logger'
 import DBManager from "./db-manager";
+import defaultConfig from './default-config'
 
 
 const downloadStates = {
@@ -13,8 +14,6 @@ const downloadStates = {
   ENDED: 'ended',
   ERROR: 'error'
 };
-
-const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const DOWNLOAD_PARAM = '?playbackType=offline';
 
@@ -53,7 +52,8 @@ export default class OfflineManager extends FakeEventTarget {
     this._downloads = {};
     this._config = config;
     this._eventManager = new EventManager();
-    this._dbManager = new DBManager({});
+    this._dbStoreName = defaultConfig.db.entriesMap.storeName;
+    this._dbManager = new DBManager(defaultConfig.db.entriesMap);
     this._setOfflineAdapter();
     this._isDBSynced = false;
   }
@@ -118,7 +118,7 @@ export default class OfflineManager extends FakeEventTarget {
         if ([downloadStates.DOWNLOADING, downloadStates.RESUMED].includes(currentDownload.state)) {
           return this._offlineProvider.pause(entryId).then(() => {
             currentDownload.state = downloadStates.PAUSED;
-            return this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+            return this._dbManager.update(this._dbStoreName, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
               OfflineManager._logger.debug('paused ended', entryId);
               resolve({
                 entryId: entryId,
@@ -143,7 +143,7 @@ export default class OfflineManager extends FakeEventTarget {
         currentDownload.state = downloadStates.RESUMED;
         this._offlineProvider.resume(entryId).then((manifestDB) => {
           currentDownload.state = [manifestDB.downloadStatus, manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
-          this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+          this._dbManager.update(this._dbStoreName, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
             OfflineManager._logger.debug('resume ended / paused', entryId);
             return Promise.resolve({
               state: currentDownload.state,
@@ -170,7 +170,7 @@ export default class OfflineManager extends FakeEventTarget {
         let currentDownload = this._downloads[entryId];
         if (currentDownload.state === downloadStates.ENDED) {
           this._offlineProvider.renewLicense(entryId).then((expiration) => {
-            this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
+            this._dbManager.update(this._dbStoreName, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
               OfflineManager._logger.debug('renew license ended', entryId);
               return Promise.resolve({
                 state: currentDownload.state,
@@ -208,7 +208,7 @@ export default class OfflineManager extends FakeEventTarget {
         this._addDownloadParam(entryId);
         this._offlineProvider.download(entryId, options)
           .then(() => {
-            return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
+            return this._dbManager.add(this._dbStoreName, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
           })
           .then(() => {
             OfflineManager._logger.debug('download ended / paused', entryId);
@@ -231,7 +231,7 @@ export default class OfflineManager extends FakeEventTarget {
         this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND));
       }
       this._offlineProvider.remove(entryId).then(() => {
-        this._dbManager.remove(ENTRIES_MAP_STORE_NAME, entryId).then(() => {
+        this._dbManager.remove(this._dbStoreName, entryId).then(() => {
           delete this._downloads[entryId];
           OfflineManager._logger.debug('remove ended', entryId);
           return Promise.resolve({

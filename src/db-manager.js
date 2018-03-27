@@ -1,11 +1,8 @@
 // @flow
 import idb from 'idb'
-import getLogger from "./utils/logger";
+import getLogger from './utils/logger'
 import {Error} from 'playkit-js'
-
-const KEY_PATH: string = 'entryId';
-const ENTRIES_MAP_STORE_NAME: string = 'entriesMap';
-const DB_NAME: string = 'offline-manager'
+import defaultConfig from './default-config'
 /**
  * Your class description.
  * @classdesc
@@ -24,14 +21,16 @@ export default class DBManager{
       return;
     }
     this.config = config;
-    this.open(DB_NAME);
+    this._storeName = config.storeName;
+    this._keyPath = config.keyPath;
+    this.open(defaultConfig.db.name);
   }
 
   open(store){
     this.dbPromise = idb.open(store, 1, (upgradeDb)=>{
       DBManager._logger.debug('open');
-      if (!upgradeDb.objectStoreNames.contains(ENTRIES_MAP_STORE_NAME)) {
-        upgradeDb.createObjectStore(ENTRIES_MAP_STORE_NAME, {keyPath: KEY_PATH});
+      if (!upgradeDb.objectStoreNames.contains(this._storeName)) {
+        upgradeDb.createObjectStore(this._storeName, {keyPath: this._keyPath});
       }
     });
   }
@@ -42,7 +41,7 @@ export default class DBManager{
       let tx = db.transaction(storeName, 'readwrite');
       let store = tx.objectStore(storeName);
       this._addConfigToItem(item);
-      item[KEY_PATH] = key;
+      item[this._keyPath] = key;
       store.put(item);
       return tx.complete;
     }).catch((error)=> {

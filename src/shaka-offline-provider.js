@@ -3,6 +3,7 @@ import shaka from 'shaka-player'
 import DBManager from './db-manager';
 import {FakeEventTarget, FakeEvent, Error, EventType as EVENTS} from 'playkit-js'
 import getLogger from './utils/logger'
+import defaultConfig from './default-config'
 
 const downloadStates = {
   DOWNLOADING: 'downloading',
@@ -10,8 +11,6 @@ const downloadStates = {
   RESUMED: 'resumed',
   ENDED: 'ended'
 };
-
-const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 export const PROGRESS_EVENT = 'progress';
 
@@ -28,11 +27,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     this._configureShakaPlayer();
     this._dtgShaka.addEventListener(EVENTS.ERROR, this._onShakaError);
     // todo remove this as part of the classes refactor, adding the offline provider config should be on "item.prepareforstorage()"
-    this._dbManager = new DBManager({
-      adapterName: 'shaka',
-      adapterVersion: "",//player.version,
-      playerVersion: ""//player.version
-    });
+    this._dbManager = new DBManager(defaultConfig.db.entriesMap);
     this._downloads = downloads;
   }
 
@@ -107,11 +102,11 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   }
 
   getDataByEntry(entryId): Promise<*> {
-    return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
+    return this._dbManager.get(defaultConfig.db.entriesMap.storeName, entryId);
   }
 
   getAllDownloads(): Promise<*> {
-    return this._dbManager.getAll(ENTRIES_MAP_STORE_NAME);
+    return this._dbManager.getAll(defaultConfig.db.entriesMap.storeName);
   }
 
   _onShakaError(event: any): void {

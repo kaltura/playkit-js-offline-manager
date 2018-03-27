@@ -1,7 +1,6 @@
 'use strict';
 
 const webpack = require("webpack");
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require("path");
 const PROD = (process.env.NODE_ENV === 'production');
 const packageData = require("./package.json");
@@ -46,21 +45,6 @@ module.exports = {
       exclude: [
         /node_modules/
       ]
-    }, {
-      test: /\.js$/,
-      exclude: [
-
-        /node_modules/
-      ],
-      enforce: 'pre',
-      use: [{
-        loader: 'eslint-loader',
-        options: {
-          rules: {
-            semi: 0
-          }
-        }
-      }]
     }]
   },
   devServer: {
