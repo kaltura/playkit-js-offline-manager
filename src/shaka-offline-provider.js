@@ -36,7 +36,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     this._downloads = downloads;
   }
 
-  _configureShakaPlayer(): void{
+  _configureShakaPlayer(): void {
     this._dtgShaka.configure({
       streaming: {
         retryParameters: {
@@ -95,7 +95,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     });
   }
 
-  renewLicense(entryId): Promise<*>{
+  renewLicense(entryId): Promise<*> {
     ShakaOfflineProvider._logger.debug('renewLicense', entryId);
     const currentDownload = this._downloads[entryId];
     this._configureDrmIfNeeded(entryId);
@@ -164,37 +164,56 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     return storeObj;
   }
 
+
+  /**
+   * This function makes an entry ready to be used by the download manager.
+   * It gets the entry data from DB, it refreshes the drm data and create a shaka storage
+   * object if one was not created already.
+   * @param entryId
+   * @param newMediaInfo - new mediaInfo from the server (used for renewDRM) TODO: pass only drm data?
+   * @returns {Promise<any>}
+   */
   setSessionData(entryId, newMediaInfo): Promise<*> {
     ShakaOfflineProvider._logger.debug('set session data', entryId);
-    if (this._downloads[entryId]) {
+    return new Promise((resolve, reject) => {
+      if (this._downloads[entryId]) {
+        return resolve();
+      }
+      return this.getDataByEntry(entryId).then(dbData => {
+        let data = Object.assign({}, dbData);
+        this._downloads[entryId] = data;
+        return resolve();
+      }).catch(error => {
+        reject(error);
+      });
+    }).then(() => {
+      let currentDownload = this._downloads[entryId];
+      currentDownload.storage = currentDownload.storage ? currentDownload.storage : this._initStorage(entryId);
       this._updateDrmDataIfNeeded(entryId, newMediaInfo);
-      return Promise.resolve();
-    }
-    return this.getDataByEntry(entryId).then(dbData => {
-      let data = Object.assign({}, dbData);
-      data['storage'] = this._initStorage(entryId);
-      this._downloads[entryId] = data;
-      this._updateDrmDataIfNeeded(entryId);
       return Promise.resolve();
     }).catch(error => {
       Promise.reject(error);
     });
   }
 
-  _updateDrmDataIfNeeded(entryId, newMediaInfo){
-    if (!newMediaInfo){
+  _updateDrmDataIfNeeded(entryId, newMediaInfo) {
+    if (!newMediaInfo) {
       return;
     }
     let currentDownload_ = this._downloads[entryId];
-    if (currentDownload_.sources.dash[0].drmData && newMediaInfo.sources.dash[0].drmData){
+    if (currentDownload_.sources.dash[0].drmData && newMediaInfo.sources.dash[0].drmData) {
       currentDownload_.sources.dash[0].drmData = newMediaInfo.sources.dash[0].drmData;
     }
   }
 
   _trackSelectionCallback(bitrate = 0, language = null) {
     return function (tracks) {
-      const textTracks = tracks.filter(track => { return track.type === 'text'});
-      const langFilteredTracks = tracks.filter(track => { return track.language === language && track.type !== 'text'});
+      const textTracks = tracks.filter(track => {
+        return track.type === 'text'
+      });
+      const langFilteredTracks = tracks.filter(track => {
+        return track.language === language && track.type !== 'text'
+      });
       tracks = langFilteredTracks.length > 0 ? langFilteredTracks : tracks;
       let closest = tracks.reduce(function (prev, curr) {
         return (Math.abs(curr.bandwidth - bitrate) < Math.abs(prev.bandwidth - bitrate) ? curr : prev);
