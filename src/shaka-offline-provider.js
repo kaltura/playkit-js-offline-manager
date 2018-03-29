@@ -194,7 +194,6 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     }).catch(error => {
       Promise.reject(error);
     });
-
   }
 
   _updateDrmDataIfNeeded(entryId, newMediaInfo) {
