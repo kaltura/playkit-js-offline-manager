@@ -1,11 +1,11 @@
-# Offline Manager  
+# Offline Manager
 
 Offline Manager is a utility that stores content for future offline usages, enabling you to download videos into the browser and play them (using the player) when online support is not available.
 
 Media is currently saved in the indexedDB.
 
 
-## Creating an Offline Manager  
+## Creating an Offline Manager
 
 To use the Offline Manager features, you'll need to create an Offline Manager. The Offline Manager currently depends on the Kaltura Player provider, so you'll need to include the Kaltura Player library as well.
 
@@ -41,11 +41,11 @@ You can now use the Offline Manager [API](./api.md) to download, resume and perf
 Here's an example to download media and pause it.
 
 ```javascript
-const ottMediaObj = {
+const ottMediaInfo = {
 	entryId: SOME_GREAT_ENTRY_ID
 	}
 // First, you'll get the media info.
-downloadManager.getMediaInfo(ottMediaObj).then( res => {
+downloadManager.getMediaConfig(ottMediaInfo).then( res => {
   console.info("media info response:", res);
   // After the download manager has the info, you can download it.
   downloadManager.download(SOME_GREAT_ENTRY_ID);
@@ -61,7 +61,7 @@ To play offline content, you'll have to provide the player with some configurati
 Here's an example:
 ```javascript
 
-downloadManager.getDownloadedMediaInfo(GREAT_STORED_ENTRY_ID).then(data=>{
+downloadManager.getDownloadedMediaConfig(GREAT_STORED_ENTRY_ID).then(data=>{
   kalturaPlayer.setMedia(data);
 });
 ```
