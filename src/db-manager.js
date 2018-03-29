@@ -84,8 +84,15 @@ export default class DBManager{
     });
   }
 
-  removeAll(store){
-    return store; //TODO implement
+  removeAll(storeName){
+    return this.dbPromise.then(db => {
+      DBManager._logger.debug('remove');
+      const tx = db.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).clear();
+      return tx.complete;
+    }).catch(error => {
+      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.CANNOT_CLEAR_STORE, error));
+    });
   }
 
   update(store,key,value){
