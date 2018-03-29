@@ -65,7 +65,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         currentDownload.expiration = offlineManifest.expiration;
         resolve();
       }).catch((error) => {
-        reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error.detail));
+        reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
       });
     })
   }
