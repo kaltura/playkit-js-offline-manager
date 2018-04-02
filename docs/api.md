@@ -16,7 +16,6 @@ Here you'll find a list of API calls and handling progress and error events.
 |`pause`|`entryId: string`|`promise<*>`| Pausing an ongoing download
 |`resume`|`entryId: string`|`promise<*>`| Resuming the download of an entry
 |`remove`|`entryId: string`|`promise<*>`| Removing a stored / partially-stored entry. This also can be used when you want to cancel a download that's still in progress.
-|`resumeAll`|-|`promise<*>`|Resuming all downloads|
 |`pauseAll`|-|`promise<*>`| Pausing all downloads|
 |`getDownloadedMediaConfig`|`entryId: string`|`promise<*>`|Getting stored metadata per entry. The object contains the license expiration timestamp, name, description, download status, size and other useful data about the entry.|
 |`getAllDownloads`|-|`promise<*>`| Getting a list of all downloaded entries.|

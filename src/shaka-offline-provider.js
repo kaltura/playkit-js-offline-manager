@@ -91,6 +91,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     let pausePromise = currentDownload.state === downloadStates.ENDED ? Promise.resolve() : this.pause(entryId);
     let storePormise = currentDownload.storePromise || Promise.resolve();
     return Promise.all([pausePromise, storePormise]).then(() => {
+      currentDownload.storage = this._initStorage(entryId, {action: 'remove'});
       return currentDownload.storage.remove(currentDownload.sources.dash[0].url);
     });
   }
@@ -226,11 +227,13 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     ShakaOfflineProvider._logger.debug('init storage', entryId);
     let storage = new shaka.offline.Storage(this._dtgShaka);
     let configuration = {
-      usePersistentLicense: true,
-      progressCallback: this._setDownloadProgress(entryId),
+      usePersistentLicense: true
     };
-    if (options && (options.bitrate || options.language)) {
+    if (options.bitrate || options.language){
       configuration["trackSelectionCallback"] = this._trackSelectionCallback(options.bitrate, options.language);
+    }
+    if (!options.action || options.action !== 'remove'){
+      configuration["progressCallback"] = this._setDownloadProgress(entryId);
     }
     storage.configure(configuration);
     return storage;
