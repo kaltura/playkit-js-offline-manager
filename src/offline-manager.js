@@ -65,6 +65,11 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
+  /**
+   * This function gets the configuration (and info) from the provider.
+   * @param mediaInfo
+   * @returns {Promise<any>}
+   */
   getMediaConfig(mediaInfo: Object): Promise<*> {
     OfflineManager._logger.debug('get media info started', mediaInfo.entryId);
     return new Promise((resolve) => {
@@ -88,7 +93,6 @@ export default class OfflineManager extends FakeEventTarget {
     })
   }
 
-
   /**
    * Removing  sources that we are not downloading from the media config
    * currently as we are having only dash adapter, we will take the first dash source.
@@ -108,6 +112,11 @@ export default class OfflineManager extends FakeEventTarget {
   }
 
 
+  /**
+   * This function pauses a download
+   * @param entryId
+   * @returns {Promise<any>}
+   */
   pause(entryId): Promise<*> {
     return new Promise((resolve) => {
       OfflineManager._logger.debug('pause start', entryId);
@@ -115,6 +124,7 @@ export default class OfflineManager extends FakeEventTarget {
       if (!currentDownload) {
         this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.ENTRY_DOES_NOT_EXIST, entryId)); //TODO LOG THIS (until background fetch is here)
       } else {
+        this._recoverEntry(entryId);
         if ([downloadStates.DOWNLOADING, downloadStates.RESUMED].includes(currentDownload.state)) {
           return this._offlineProvider.pause(entryId).then(() => {
             currentDownload.state = downloadStates.PAUSED;
@@ -135,10 +145,16 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
+  /**
+   * This function resumes a download
+   * @param entryId
+   * @returns {Promise<*>}
+   */
   resume(entryId): Promise<*> {
     OfflineManager._logger.debug('resume started', entryId);
     return this._offlineProvider.setSessionData(entryId).then(() => {
       let currentDownload = this._downloads[entryId];
+      this._recoverEntry(entryId);
       if (currentDownload.state === downloadStates.PAUSED) {
         currentDownload.state = downloadStates.RESUMED;
         this._offlineProvider.resume(entryId).then((manifestDB) => {
@@ -157,6 +173,11 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
+  /**
+   * This function gets an entryId and renew it's DRM license from the server
+   * @param entryId
+   * @returns {Promise<T>}
+   */
   renewLicense(entryId): Promise<*> {
     OfflineManager._logger.debug('renew license started', entryId);
     const provider = new Provider(this._config.provider);
@@ -253,16 +274,35 @@ export default class OfflineManager extends FakeEventTarget {
     })
   }
 
+  /**
+   * The indexed db can contain corrupted values regarding a download if something goes wrong.
+   * for example, it can has a "downloading" state while there is nothing downloaded,
+   * if a download was interrupted unexpectedly (browser crash e.g).
+   * this function handles this.
+   * @private
+   */
+  _recoverEntry(entryId) {
+    let currEntry = this._downloads[entryId];
+    if (!currEntry || currEntry.recovered) {
+      return;
+    } else {
+      if (currEntry.state === downloadStates.DOWNLOADING || currEntry.state === downloadStates.RESUMED){
+        currEntry.state=downloadStates.PAUSED;
+      }
+      currEntry.recovered = true;
+    }
+  }
+
   getDownloadedMediaConfig(entryId: string): Promise<*> {
     OfflineManager._logger.debug('getDownloadedMediaConfig', entryId);
-    return this._offlineProvider.getDataByEntry(entryId);
+    return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
   }
 
   getAllDownloads(): Promise<*> {
     if (this._isDBSynced) {
       return Promise.resolve(Object.values(this._downloads));
     }
-    return this._offlineProvider.getAllDownloads().then(dbDownloads => {
+    return this._dbManager.getAll(ENTRIES_MAP_STORE_NAME).then(dbDownloads => {
       this._isDBSynced = true;
       dbDownloads.forEach((download) => {
         if (!this._downloads[download.id]) {
