@@ -229,7 +229,7 @@ export default class OfflineManager extends FakeEventTarget {
         this._addDownloadParam(entryId);
         this._offlineProvider.download(entryId, options)
           .then(() => {
-            return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
+            return this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
           })
           .then(() => {
             OfflineManager._logger.debug('download ended / paused', entryId);

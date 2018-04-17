@@ -58,12 +58,16 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       currentDownload['storage'] = this._initStorage(entryId, options);
       // store promise is saved for canceling a download situation
       currentDownload['storePromise'] = currentDownload.storage.store(currentDownload.sources.dash[0].url, {});
-      currentDownload['storePromise'].then(offlineManifest => {
+      currentDownload['storePromise'].then(storeResponse => {
         ShakaOfflineProvider._logger.debug('after storage.store', entryId);
-        currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
-        currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
-        currentDownload.expiration = offlineManifest.expiration;
-        resolve();
+        currentDownload.state = downloadStates.DOWNLOADING;
+        currentDownload.sources.dash[0].url = storeResponse[1].offlineUri;
+        currentDownload.expiration = storeResponse[1].expiration;
+        this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
+        storeResponse[0].then(state => {
+          currentDownload.state = state === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
+          resolve();
+        })
       }).catch((error) => {
         reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
       });
