@@ -307,6 +307,7 @@ export default class OfflineManager extends FakeEventTarget {
       dbDownloads.forEach((download) => {
         if (!this._downloads[download.id]) {
           this._downloads[download.id] = download;
+          this._recoverEntry(download.id);
         }
       });
       return Promise.resolve(Object.values(this._downloads));
