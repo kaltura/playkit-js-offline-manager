@@ -61,10 +61,11 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       currentDownload['storePromise'].then(storeResponse => {
         ShakaOfflineProvider._logger.debug('after storage.store', entryId);
         currentDownload.state = downloadStates.DOWNLOADING;
-        currentDownload.sources.dash[0].url = storeResponse[1].offlineUri;
-        currentDownload.expiration = storeResponse[1].expiration;
+        currentDownload.recovered = true;
+        currentDownload.sources.dash[0].url = storeResponse['manifest'].offlineUri;
+        currentDownload.expiration = storeResponse['manifest'].expiration;
         this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
-        storeResponse[0].then(state => {
+        storeResponse['downloadPromise'].then(state => {
           currentDownload.state = state === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
           resolve();
         })
