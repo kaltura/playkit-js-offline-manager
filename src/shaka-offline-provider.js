@@ -56,19 +56,20 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       let currentDownload = this._downloads[entryId];
       this._configureDrmIfNeeded(entryId);
       currentDownload['storage'] = this._initStorage(entryId, options);
-      // store promise is saved for canceling a download situation
-      currentDownload['storePromise'] = currentDownload.storage.store(currentDownload.sources.dash[0].url, {});
-      currentDownload['storePromise'].then(storeResponse => {
-        ShakaOfflineProvider._logger.debug('after storage.store', entryId);
+      // first store manifest
+      currentDownload.storage.storeManifest(currentDownload.sources.dash[0].url, {}).then(manifest=>{
+        ShakaOfflineProvider._logger.debug('after storage.storeManifest', entryId);
         currentDownload.state = downloadStates.DOWNLOADING;
         currentDownload.recovered = true;
-        currentDownload.sources.dash[0].url = storeResponse['manifest'].offlineUri;
-        currentDownload.expiration = storeResponse['manifest'].expiration;
-        this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
-        storeResponse['downloadPromise'].then(state => {
-          currentDownload.state = state === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
-          resolve();
-        })
+        currentDownload.sources.dash[0].url = manifest.offlineUri;
+        currentDownload.expiration = manifest.expiration;
+        return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
+      }).then(() => {
+        // then download the content
+        return currentDownload.storage.download(currentDownload.sources.dash[0].url)
+      }).then((manifest) => {
+        currentDownload.state = manifest.downloadStatus;
+        resolve();
       }).catch((error) => {
         reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
       });
@@ -84,7 +85,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   resume(entryId: string): Promise<*> {
     ShakaOfflineProvider._logger.debug('resume', entryId);
     const currentDownload = this._downloads[entryId];
-    return currentDownload.storage.resume(currentDownload.sources.dash[0].url);
+    return currentDownload.storage.download(currentDownload.sources.dash[0].url);
   }
 
   remove(entryId): Promise<*> {
