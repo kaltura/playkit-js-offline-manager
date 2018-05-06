@@ -71,10 +71,10 @@ export default class OfflineManager extends FakeEventTarget {
    * @returns {Promise<any>}
    */
   getMediaConfig(mediaInfo: Object): Promise<*> {
-    OfflineManager._logger.debug('get media info started', mediaInfo.entryId);
+    OfflineManager._logger.debug('get media info started', mediaInfo.id);
     return new Promise((resolve) => {
-      if (this._downloads[mediaInfo.entryId]) {
-        return resolve(this._downloads[mediaInfo.entryId].sources.dash[0]);
+      if (this._downloads[mediaInfo.id]) {
+        return resolve(this._downloads[mediaInfo.id].sources.dash[0]);
       }
       const provider = new Provider(this._config.provider);
       return provider.getMediaConfig(mediaInfo)
@@ -82,8 +82,8 @@ export default class OfflineManager extends FakeEventTarget {
           if (Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
             mediaConfig = this._removeNotRelevantSources(mediaConfig, SOURCE_TYPE);
             let sourceData = mediaConfig.sources.dash[0];
-            sourceData.entryId = mediaInfo.entryId;
-            this._downloads[mediaInfo.entryId] = mediaConfig;
+            sourceData.id = mediaConfig.id;
+            this._downloads[mediaConfig.id] = mediaConfig;
             OfflineManager._logger.debug('get media info ended');
             return resolve(sourceData);
           } else {
@@ -158,6 +158,7 @@ export default class OfflineManager extends FakeEventTarget {
       if (currentDownload.state === downloadStates.PAUSED) {
         currentDownload.state = downloadStates.RESUMED;
         this._offlineProvider.resume(entryId).then((manifestDB) => {
+          currentDownload.size = manifestDB.size;
           currentDownload.state = [manifestDB.downloadStatus, manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
           this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
             OfflineManager._logger.debug('resume ended / paused', entryId);
@@ -319,7 +320,7 @@ export default class OfflineManager extends FakeEventTarget {
     let promises = [];
     return this.getAllDownloads().then(downloads => {
       downloads.forEach(download => {
-        promises.push(this.remove(download.entryId));
+        promises.push(this.remove(download.id));
       });
       this._downloads = {};
       return Promise.all(promises);
@@ -330,7 +331,7 @@ export default class OfflineManager extends FakeEventTarget {
     let promises = [];
     return this.getAllDownloads().then(downloads => {
       downloads.forEach(download => {
-        promises.push(this.pause(download.entryId));
+        promises.push(this.pause(download.id));
       });
       return Promise.all(promises);
     });
