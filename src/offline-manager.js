@@ -158,7 +158,6 @@ export default class OfflineManager extends FakeEventTarget {
       if (currentDownload.state === downloadStates.PAUSED) {
         currentDownload.state = downloadStates.RESUMED;
         this._offlineProvider.resume(entryId).then((manifestDB) => {
-          currentDownload.size = manifestDB.size;
           currentDownload.state = [manifestDB.downloadStatus, manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
           this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
             OfflineManager._logger.debug('resume ended / paused', entryId);
