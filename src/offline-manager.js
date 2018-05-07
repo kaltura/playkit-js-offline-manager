@@ -18,7 +18,9 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const DOWNLOAD_PARAM = '?playbackType=offline';
 
-const SOURCE_TYPE = 'dash';
+const NOT_SUPPORTED_SOURCE_TYPES = ['hls','progressive'];
+
+const SUPPORTED_SOURCE = 'dash';
 /**
  * Your class description.
  * @classdesc
@@ -80,10 +82,10 @@ export default class OfflineManager extends FakeEventTarget {
       return provider.getMediaConfig(mediaInfo)
         .then(mediaConfig => {
           if (Utils.Object.hasPropertyPath(mediaConfig, 'sources.dash') && mediaConfig.sources.dash.length > 0) {
-            mediaConfig = this._removeNotRelevantSources(mediaConfig, SOURCE_TYPE);
+            mediaConfig = this._removeNotRelevantSources(mediaConfig);
             let sourceData = mediaConfig.sources.dash[0];
-            sourceData.id = mediaConfig.id;
-            this._downloads[mediaConfig.id] = mediaConfig;
+            sourceData.id = mediaConfig.sources.id;
+            this._downloads[mediaConfig.sources.id] = mediaConfig;
             OfflineManager._logger.debug('get media info ended');
             return resolve(sourceData);
           } else {
@@ -92,25 +94,6 @@ export default class OfflineManager extends FakeEventTarget {
         });
     })
   }
-
-  /**
-   * Removing  sources that we are not downloading from the media config
-   * currently as we are having only dash adapter, we will take the first dash source.
-   * @param {Object} mediaConfig
-   * @private
-   */
-  _removeNotRelevantSources(mediaConfig: Object, relevantSourceType: string): Object {
-    for (let key in mediaConfig.sources) {
-      let source = mediaConfig.sources[key];
-      if (key === relevantSourceType) {
-        source = source.slice(1);
-      } else {
-        delete mediaConfig.sources[key];
-      }
-    }
-    return Object.assign({}, mediaConfig);
-  }
-
 
   /**
    * This function pauses a download
@@ -207,11 +190,6 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
-  _addDownloadParam(entryId): void {
-    let currentDownload = this._downloads[entryId];
-    currentDownload.sources.dash[0].url = currentDownload.sources.dash[0].url + DOWNLOAD_PARAM;
-  }
-
   download(entryId: string, options: Object): Promise<*> {
     return new Promise((resolve) => {
       OfflineManager._logger.debug('download start', entryId);
@@ -266,12 +244,106 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
+
+  removeAll(): Promise<*> {
+    let promises = [];
+    return this.getAllDownloads().then(downloads => {
+      downloads.forEach(download => {
+        promises.push(this.remove(download.sources.id));
+      });
+      this._downloads = {};
+      return Promise.all(promises);
+    });
+  }
+
+  pauseAll(): Promise<*> {
+    let promises = [];
+    return this.getAllDownloads().then(downloads => {
+      downloads.forEach(download => {
+        promises.push(this.pause(download.sources.id));
+      });
+      return Promise.all(promises);
+    });
+  }
+
+  getExpiration(entryId): Promise<*> {
+    return this.getDownloadedMediaConfig(entryId).then(data => {
+      return data.expiration;
+    });
+  }
+
+  /**
+   * Getting the full media config of an entry from the indexed db. It contains the full provider info
+   * the status of the download, actual size of the entry, expected size (full size) and drm expiration date.
+   * @param entryId
+   * @returns {*}
+   */
+  getDownloadedMediaConfig(entryId: string): Promise<*> {
+    OfflineManager._logger.debug('getDownloadedMediaConfig', entryId);
+    return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
+  }
+
+  /**
+   * Getting all the in progress, ended, resumed, paused and ended downloads.
+   * @returns {Promise<Array<Object>>}
+   */
+  getAllDownloads(): Promise<*> {
+    if (this._isDBSynced) {
+      return Promise.resolve(this._getReducedDownloadObjectsData());
+    }
+    return this._dbManager.getAll(ENTRIES_MAP_STORE_NAME).then(dbDownloads => {
+      this._isDBSynced = true;
+      dbDownloads.forEach((download) => {
+        const entryId = download.sources.id;
+        if (!this._downloads[entryId]) {
+          this._downloads[entryId] = download;
+          this._recoverEntry(entryId);
+        }
+      });
+      return Promise.resolve(this._getReducedDownloadObjectsData());
+    });
+  }
+
+  /**
+   * add parameter to the manifest url so the server will know it's only for downloading and not playing (stats purpose)
+   * @param entryId
+   * @private
+   */
+  _addDownloadParam(entryId: string): void {
+    let currentDownload = this._downloads[entryId];
+    currentDownload.sources.dash[0].url = currentDownload.sources.dash[0].url + DOWNLOAD_PARAM;
+  }
+
+  /**
+   * checking if an entry exists already in the DB.
+   * @param entryId
+   * @returns {Promise<any>}
+   * @private
+   */
   _doesEntryExists(entryId): Promise<*> {
     return new Promise((resolve) => {
       return this.getDownloadedMediaConfig(entryId).then((entry) => {
         resolve(entry && entry.state);
       })
     })
+  }
+
+  /**
+   * Removing  sources that we are not downloading from the media config
+   * currently as we are having only dash adapter, we will take the first dash source.
+   * @param {Object} mediaConfig
+   * @private
+   */
+  _removeNotRelevantSources(mediaConfig: Object): Object {
+    for (let key in mediaConfig.sources) {
+      let source = mediaConfig.sources[key];
+      if (NOT_SUPPORTED_SOURCE_TYPES.includes(key)) {
+        delete mediaConfig.sources[key];
+      } else if (key === SUPPORTED_SOURCE) {
+        source = source.slice(1);
+      }
+    }
+    return Object.assign({}, mediaConfig);
   }
 
   /**
@@ -293,55 +365,31 @@ export default class OfflineManager extends FakeEventTarget {
     }
   }
 
-  getDownloadedMediaConfig(entryId: string): Promise<*> {
-    OfflineManager._logger.debug('getDownloadedMediaConfig', entryId);
-    return this._dbManager.get(ENTRIES_MAP_STORE_NAME, entryId);
-  }
-
-  getAllDownloads(): Promise<*> {
-    if (this._isDBSynced) {
-      return Promise.resolve(Object.values(this._downloads));
-    }
-    return this._dbManager.getAll(ENTRIES_MAP_STORE_NAME).then(dbDownloads => {
-      this._isDBSynced = true;
-      dbDownloads.forEach((download) => {
-        if (!this._downloads[download.id]) {
-          this._downloads[download.id] = download;
-          this._recoverEntry(download.id);
-        }
-      });
-      return Promise.resolve(Object.values(this._downloads));
+  /**
+   * get a reduced and normalized version of the provider data.
+   * @returns {Array<Object>}
+   * @private
+   */
+  _getReducedDownloadObjectsData() {
+    return Object.keys(this._downloads).map(i => {
+      const item = this._downloads[i];
+      return {
+        id: item.sources.id,
+        metadata: item.sources.metadata,
+        poster: item.sources.poster,
+        expectedSize: item.expectedSize,
+        size: item.size,
+        expiration: item.expiration,
+        state: item.state
+      };
     });
   }
 
-
-  removeAll(): Promise<*> {
-    let promises = [];
-    return this.getAllDownloads().then(downloads => {
-      downloads.forEach(download => {
-        promises.push(this.remove(download.id));
-      });
-      this._downloads = {};
-      return Promise.all(promises);
-    });
-  }
-
-  pauseAll(): Promise<*> {
-    let promises = [];
-    return this.getAllDownloads().then(downloads => {
-      downloads.forEach(download => {
-        promises.push(this.pause(download.id));
-      });
-      return Promise.all(promises);
-    });
-  }
-
-  getExpiration(entryId): Promise<*> {
-    return this.getDownloadedMediaConfig(entryId).then(data => {
-      return data.expiration;
-    });
-  }
-
+  /**
+   * Error handler, dispatches an error object
+   * @param error
+   * @private
+   */
   _onError(error: Error): void {
     let event = new FakeEvent(EVENTS.ERROR, error);
     this.dispatchEvent(event);

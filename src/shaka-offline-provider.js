@@ -64,7 +64,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         currentDownload.sources.dash[0].url = manifest.offlineUri;
         currentDownload.expiration = manifest.expiration;
         currentDownload.expectedSize = manifest.expectedSize;
-        currentDownload.progress = 0;
+        currentDownload.size = 0;
         return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
       }).then(() => {
         // then download the content
@@ -252,7 +252,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     ShakaOfflineProvider._logger.debug('set download progress', entryId);
     return (content, progress) => {
       let currentDownload_ = this._downloads[entryId];
-      currentDownload_.progress = progress * 100;
+      currentDownload_.size = content.size;
       this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload_));
       let event = new FakeEvent(PROGRESS_EVENT, {
         detail: {
