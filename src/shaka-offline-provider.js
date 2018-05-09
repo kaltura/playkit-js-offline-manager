@@ -161,7 +161,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   }
 
   prepareItemForStorage(object) {
-    const keysToDelete = ["storage", "url", "mimetype", "storePromise"];
+    const keysToDelete = ["storage", "url", "mimetype", "storePromise", "recovered"];
     let storeObj = Object.assign({}, object);
     for (let key in storeObj) {
       if (keysToDelete.includes(key)) {
