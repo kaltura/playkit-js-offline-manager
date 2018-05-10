@@ -56,13 +56,22 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       let currentDownload = this._downloads[entryId];
       this._configureDrmIfNeeded(entryId);
       currentDownload['storage'] = this._initStorage(entryId, options);
-      // store promise is saved for canceling a download situation
-      currentDownload['storePromise'] = currentDownload.storage.store(currentDownload.sources.dash[0].url, {});
-      currentDownload['storePromise'].then(offlineManifest => {
-        ShakaOfflineProvider._logger.debug('after storage.store', entryId);
-        currentDownload.state = offlineManifest.downloadStatus === downloadStates.PAUSED ? downloadStates.PAUSED : downloadStates.ENDED;
-        currentDownload.sources.dash[0].url = offlineManifest.offlineUri;
-        currentDownload.expiration = offlineManifest.expiration;
+      // first store manifest
+      currentDownload.storage.storeManifest(currentDownload.sources.dash[0].url, {}).then(manifest=>{
+        ShakaOfflineProvider._logger.debug('after storage.storeManifest', entryId);
+        currentDownload.state = downloadStates.DOWNLOADING;
+        currentDownload.recovered = true;
+        currentDownload.sources.dash[0].url = manifest.offlineUri;
+        currentDownload.expiration = manifest.expiration;
+        currentDownload.expectedSize = manifest.expectedSize;
+        currentDownload.size = 0;
+        return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
+      }).then(() => {
+        // then download the content
+        return currentDownload.storage.download(currentDownload.sources.dash[0].url)
+      }).then((manifest) => {
+        currentDownload.size = manifest.size;
+        currentDownload.state = manifest.downloadStatus;
         resolve();
       }).catch((error) => {
         reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
@@ -79,7 +88,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   resume(entryId: string): Promise<*> {
     ShakaOfflineProvider._logger.debug('resume', entryId);
     const currentDownload = this._downloads[entryId];
-    return currentDownload.storage.resume(currentDownload.sources.dash[0].url);
+    return currentDownload.storage.download(currentDownload.sources.dash[0].url);
   }
 
   remove(entryId): Promise<*> {
@@ -152,7 +161,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   }
 
   prepareItemForStorage(object) {
-    const keysToDelete = ["storage", "url", "mimetype", "storePromise"];
+    const keysToDelete = ["storage", "url", "mimetype", "storePromise", "recovered"];
     let storeObj = Object.assign({}, object);
     for (let key in storeObj) {
       if (keysToDelete.includes(key)) {
@@ -242,8 +251,16 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   _setDownloadProgress(entryId) {
     ShakaOfflineProvider._logger.debug('set download progress', entryId);
     return (content, progress) => {
+      let currentDownload_ = this._downloads[entryId];
+      currentDownload_.size = content.size;
+      this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload_));
       let event = new FakeEvent(PROGRESS_EVENT, {
         detail: {
+          content: content,
+          progress: progress * 100,
+          entryId: entryId
+        },
+        details: {
           content: content,
           progress: progress * 100,
           entryId: entryId
