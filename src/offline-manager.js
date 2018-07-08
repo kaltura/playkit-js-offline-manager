@@ -96,17 +96,6 @@ export default class OfflineManager extends FakeEventTarget {
   }
 
   /**
-   *
-   * @param sources
-   * @returns {*}
-   * @private
-   */
-  _getBestDashSource(sources: Object): Object {
-    const selectedSource = sources.filter(source => source.drmData ? true : false)[0];
-    return selectedSource ? selectedSource : sources[0];
-  }
-
-  /**
    * This function pauses a download
    * @param entryId
    * @returns {Promise<any>}
@@ -351,7 +340,7 @@ export default class OfflineManager extends FakeEventTarget {
       if (NOT_SUPPORTED_SOURCE_TYPES.includes(key)) {
         delete mediaConfig.sources[key];
       } else if (key === SUPPORTED_SOURCE) {
-        mediaConfig.sources[key] = [this._getBestDashSource(source)];
+        source = source.slice(1);
       }
     }
     return Object.assign({}, mediaConfig);
