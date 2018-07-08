@@ -18,7 +18,7 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const DOWNLOAD_PARAM = '?playbackType=offline';
 
-const NOT_SUPPORTED_SOURCE_TYPES = ['hls','progressive'];
+const NOT_SUPPORTED_SOURCE_TYPES = ['hls', 'progressive'];
 
 const SUPPORTED_SOURCE = 'dash';
 /**
@@ -93,6 +93,17 @@ export default class OfflineManager extends FakeEventTarget {
           }
         });
     })
+  }
+
+  /**
+   *
+   * @param sources
+   * @returns {*}
+   * @private
+   */
+  _getBestDashSource(sources: Object): Object {
+    const selectedSource = sources.filter(source => source.drmData ? true : false)[0];
+    return selectedSource ? selectedSource : sources[0];
   }
 
   /**
@@ -340,7 +351,7 @@ export default class OfflineManager extends FakeEventTarget {
       if (NOT_SUPPORTED_SOURCE_TYPES.includes(key)) {
         delete mediaConfig.sources[key];
       } else if (key === SUPPORTED_SOURCE) {
-        source = source.slice(1);
+        mediaConfig.sources[key] = [this._getBestDashSource(source)];
       }
     }
     return Object.assign({}, mediaConfig);
@@ -358,8 +369,8 @@ export default class OfflineManager extends FakeEventTarget {
     if (!currEntry || currEntry.recovered) {
       return;
     } else {
-      if (currEntry.state === downloadStates.DOWNLOADING || currEntry.state === downloadStates.RESUMED){
-        currEntry.state=downloadStates.PAUSED;
+      if (currEntry.state === downloadStates.DOWNLOADING || currEntry.state === downloadStates.RESUMED) {
+        currEntry.state = downloadStates.PAUSED;
       }
       currEntry.recovered = true;
     }
@@ -380,6 +391,9 @@ export default class OfflineManager extends FakeEventTarget {
         expectedSize: item.expectedSize,
         size: item.size,
         expiration: item.expiration,
+        duration: item.sources.duration,
+        dvr: item.sources.dvr,
+        type: item.sources.type,
         state: item.state
       };
     });
