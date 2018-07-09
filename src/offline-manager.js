@@ -140,7 +140,7 @@ export default class OfflineManager extends FakeEventTarget {
       this._recoverEntry(entryId);
       if (currentDownload.state === downloadStates.PAUSED) {
         currentDownload.state = downloadStates.RESUMED;
-        this._offlineProvider.resume(entryId).then((manifestDB) => {
+        return this._offlineProvider.resume(entryId).then((manifestDB) => {
           currentDownload.state = [manifestDB.downloadStatus, manifestDB.ob].includes(downloadStates.ENDED) ? downloadStates.ENDED : downloadStates.PAUSED;
           this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)).then(() => {
             OfflineManager._logger.debug('resume ended / paused', entryId);
@@ -152,7 +152,7 @@ export default class OfflineManager extends FakeEventTarget {
         });
       }
     }).catch((error) => {
-      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RESUME_REJECTED, error));
+      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RESUME_ABORTED, error));
     });
   }
 
@@ -216,7 +216,7 @@ export default class OfflineManager extends FakeEventTarget {
               entryId: entryId
             });
           }).catch((error) => {
-          this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
+          this._onError(error);
         });
       });
     });
@@ -240,7 +240,7 @@ export default class OfflineManager extends FakeEventTarget {
         })
       });
     }).catch((error) => {
-      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_REJECTED, error));
+      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_FAILED, error));
     });
   }
 

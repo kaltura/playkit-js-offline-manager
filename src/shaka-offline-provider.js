@@ -3,6 +3,7 @@ import shaka from 'shaka-player'
 import DBManager from './db-manager';
 import {FakeEventTarget, FakeEvent, Error, EventType as EVENTS} from 'playkit-js'
 import getLogger from './utils/logger'
+import DOMErrorNames from './utils/dom-error-names'
 
 const downloadStates = {
   DOWNLOADING: 'downloading',
@@ -74,7 +75,11 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         currentDownload.state = manifest.downloadStatus;
         resolve();
       }).catch((error) => {
-        reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
+        let code = Error.Code.DOWNLOAD_ABORTED;
+        if (error && typeof error.data && error.data[0].name === DOMErrorNames.QUOTA_EXCEEDED_ERROR){
+          code = Error.Code.STORAGE_QUOTA_EXCEEDED;
+        }
+        reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, code, error));
       });
     })
   }

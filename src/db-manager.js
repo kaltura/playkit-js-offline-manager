@@ -2,10 +2,12 @@
 import idb from 'idb'
 import getLogger from "./utils/logger";
 import {Error} from 'playkit-js'
+import DOMErrorNames from './utils/dom-error-names'
 
 const KEY_PATH: string = 'entryId';
 const ENTRIES_MAP_STORE_NAME: string = 'entriesMap';
-const DB_NAME: string = 'offline-manager'
+const DB_NAME: string = 'offline-manager';
+
 /**
  * Your class description.
  * @classdesc
@@ -46,7 +48,11 @@ export default class DBManager{
       store.put(item);
       return tx.complete;
     }).catch((error)=> {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.CANNOT_ADD_ITEM, error));
+      let code = Error.Code.CANNOT_ADD_ITEM;
+      if (error && error.name === DOMErrorNames.QUOTA_EXCEEDED_ERROR){
+        code = Error.Code.STORAGE_QUOTA_EXCEEDED;
+      }
+      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, code, error));
     });
   }
 
