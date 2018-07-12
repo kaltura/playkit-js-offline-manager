@@ -45,14 +45,14 @@ const ottMediaInfo = {
 	entryId: SOME_GREAT_ENTRY_ID
 	}
 // First, you'll get the media info.
-downloadManager.getMediaConfig(ottMediaInfo).then( res => {
+offlineManager.getMediaConfig(ottMediaInfo).then( res => {
   console.info("media info response:", res);
   // After the download manager has the info, you can download it.
-  downloadManager.download(SOME_GREAT_ENTRY_ID);
+  offlineManager.download(SOME_GREAT_ENTRY_ID);
 })
 
 // Pause a download
-downloadManager.pause(SOME_GREAT_ENTRY_ID);
+offlineManager.pause(SOME_GREAT_ENTRY_ID);
 ```
 
 ## Playing Stored Content
@@ -61,7 +61,7 @@ To play offline content, you'll have to provide the player with some configurati
 Here's an example:
 ```javascript
 
-downloadManager.getDownloadedMediaConfig(GREAT_STORED_ENTRY_ID).then(data=>{
+offlineManager.getDownloadedMediaConfig(GREAT_STORED_ENTRY_ID).then(data=>{
   kalturaPlayer.setMedia(data);
 });
 ```

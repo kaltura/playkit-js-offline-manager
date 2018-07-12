@@ -2,7 +2,6 @@
 import idb from 'idb'
 import getLogger from "./utils/logger";
 import {Error} from 'playkit-js'
-import DOMErrorNames from './utils/dom-error-names'
 
 const KEY_PATH: string = 'entryId';
 const ENTRIES_MAP_STORE_NAME: string = 'entriesMap';
@@ -48,11 +47,7 @@ export default class DBManager{
       store.put(item);
       return tx.complete;
     }).catch((error)=> {
-      let code = Error.Code.CANNOT_ADD_ITEM;
-      if (error && error.name === DOMErrorNames.QUOTA_EXCEEDED_ERROR){
-        code = Error.Code.STORAGE_QUOTA_EXCEEDED;
-      }
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, code, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.CANNOT_ADD_ITEM, error));
     });
   }
 
@@ -63,7 +58,7 @@ export default class DBManager{
       tx.objectStore(storeName).delete(key);
       return tx.complete;
     }).catch(error => {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
   }
 
@@ -75,7 +70,7 @@ export default class DBManager{
     }).then(obj =>{
       return obj;
     }).catch(error => {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
   }
 
@@ -87,7 +82,7 @@ export default class DBManager{
     }).then(allObjs => {
       return allObjs;
     }).catch(error => {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
   }
 

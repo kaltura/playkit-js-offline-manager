@@ -18,7 +18,7 @@ const ENTRIES_MAP_STORE_NAME = 'entriesMap';
 
 const DOWNLOAD_PARAM = '?playbackType=offline';
 
-const NOT_SUPPORTED_SOURCE_TYPES = ['hls','progressive'];
+const NOT_SUPPORTED_SOURCE_TYPES = ['hls', 'progressive'];
 
 const SUPPORTED_SOURCE = 'dash';
 /**
@@ -119,7 +119,7 @@ export default class OfflineManager extends FakeEventTarget {
               });
             });
           }).catch((error) => {
-            this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.PAUSE_ABORTERD, error));
+            this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.PAUSE_FAILED, error));
           });
         } else {
           return resolve();
@@ -152,7 +152,7 @@ export default class OfflineManager extends FakeEventTarget {
         });
       }
     }).catch((error) => {
-      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RESUME_ABORTED, error));
+      this._onError(error);
     });
   }
 
@@ -186,7 +186,7 @@ export default class OfflineManager extends FakeEventTarget {
         }
       })
     }).catch((error) => {
-      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RENEW_LICENSE_FAILED, error));
+      this._onError(error);
     });
   }
 
@@ -206,18 +206,14 @@ export default class OfflineManager extends FakeEventTarget {
         currentDownload['state'] = downloadStates.DOWNLOADING;
         this._addDownloadParam(entryId);
         this._offlineProvider.download(entryId, options)
-          .then(() => {
-            return this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload));
-          })
+          .then(this._dbManager.update(ENTRIES_MAP_STORE_NAME, entryId, this._offlineProvider.prepareItemForStorage(currentDownload)))
           .then(() => {
             OfflineManager._logger.debug('download ended / paused', entryId);
             resolve({
               state: currentDownload.state,
               entryId: entryId
             });
-          }).catch((error) => {
-          this._onError(error);
-        });
+          }).catch(error => this._onError(error));
       });
     });
   }
@@ -237,11 +233,9 @@ export default class OfflineManager extends FakeEventTarget {
             state: currentDownload.state,
             entryId: entryId
           });
-        })
-      });
-    }).catch((error) => {
-      this._onError(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_FAILED, error));
-    });
+        }).catch(error => this._onError(error));
+      }).catch(error => this._onError(error));
+    }).catch(error => this._onError(error));
   }
 
 
@@ -358,8 +352,8 @@ export default class OfflineManager extends FakeEventTarget {
     if (!currEntry || currEntry.recovered) {
       return;
     } else {
-      if (currEntry.state === downloadStates.DOWNLOADING || currEntry.state === downloadStates.RESUMED){
-        currEntry.state=downloadStates.PAUSED;
+      if (currEntry.state === downloadStates.DOWNLOADING || currEntry.state === downloadStates.RESUMED) {
+        currEntry.state = downloadStates.PAUSED;
       }
       currEntry.recovered = true;
     }
