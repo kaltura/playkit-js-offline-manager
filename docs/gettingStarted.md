@@ -36,7 +36,8 @@ You can read more about [configuration](https://github.com/kaltura/kaltura-playe
 
 You can now use the Offline Manager [API](./api.md) to download, resume and perform other actions.
 
-> Note: API documentation can be found [here](./api.md).
+> API documentation can be found [here](./api.md).
+> Errors documentation can be found [here](./errors.md)
 
 Here's an example to download media and pause it.
 
