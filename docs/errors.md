@@ -18,7 +18,7 @@ offlineManager.addEventListener("error", event => {
 });
 ```
 
-###The ```data``` key
+### The ```data``` key
 The ```data``` contains the reason for the error (if exists).
 For example, while downloading a video and no more free storage exists, the following error will be raised:
 ```javascript
