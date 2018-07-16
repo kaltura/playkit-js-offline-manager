@@ -43,7 +43,7 @@ export default class OfflineManager extends FakeEventTarget {
    * @constructor
    * @param {Object} config - The plugin config.
    */
-  constructor(config) {
+  constructor(config: Object) {
     if (config.logLevel && LogLevel[config.logLevel]) {
       setLogLevel(LogLevel[config.logLevel]);
     }
@@ -100,7 +100,7 @@ export default class OfflineManager extends FakeEventTarget {
    * @param entryId
    * @returns {Promise<any>}
    */
-  pause(entryId): Promise<*> {
+  pause(entryId: string): Promise<*> {
     return new Promise((resolve) => {
       OfflineManager._logger.debug('pause start', entryId);
       let currentDownload = this._downloads[entryId];
@@ -115,7 +115,7 @@ export default class OfflineManager extends FakeEventTarget {
               OfflineManager._logger.debug('paused ended', entryId);
               resolve({
                 entryId: entryId,
-                state: downloadStates.PAUSE
+                state: downloadStates.PAUSED
               });
             });
           }).catch((error) => {
@@ -133,7 +133,7 @@ export default class OfflineManager extends FakeEventTarget {
    * @param entryId
    * @returns {Promise<*>}
    */
-  resume(entryId): Promise<*> {
+  resume(entryId: string): Promise<*> {
     OfflineManager._logger.debug('resume started', entryId);
     return this._offlineProvider.setSessionData(entryId).then(() => {
       let currentDownload = this._downloads[entryId];
@@ -161,7 +161,7 @@ export default class OfflineManager extends FakeEventTarget {
    * @param entryId
    * @returns {Promise<T>}
    */
-  renewLicense(entryId): Promise<*> {
+  renewLicense(entryId: string): Promise<*> {
     OfflineManager._logger.debug('renew license started', entryId);
     const provider = new Provider(this._config.provider);
     return provider.getMediaConfig({
@@ -260,7 +260,7 @@ export default class OfflineManager extends FakeEventTarget {
     });
   }
 
-  getExpiration(entryId): Promise<*> {
+  getExpiration(entryId: string): Promise<*> {
     return this.getDownloadedMediaConfig(entryId).then(data => {
       return data.expiration;
     });
@@ -314,7 +314,7 @@ export default class OfflineManager extends FakeEventTarget {
    * @returns {Promise<any>}
    * @private
    */
-  _doesEntryExists(entryId): Promise<*> {
+  _doesEntryExists(entryId: string): Promise<*> {
     return new Promise((resolve) => {
       return this.getDownloadedMediaConfig(entryId).then((entry) => {
         resolve(entry && entry.state);
@@ -347,7 +347,7 @@ export default class OfflineManager extends FakeEventTarget {
    * this function handles this.
    * @private
    */
-  _recoverEntry(entryId) {
+  _recoverEntry(entryId: string) {
     let currEntry = this._downloads[entryId];
     if (!currEntry || currEntry.recovered) {
       return;
