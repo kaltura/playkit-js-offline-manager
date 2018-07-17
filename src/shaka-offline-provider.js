@@ -57,7 +57,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       this._configureDrmIfNeeded(entryId);
       currentDownload['storage'] = this._initStorage(entryId, options);
       // first store manifest
-      currentDownload.storage.storeManifest(currentDownload.sources.dash[0].url, {}).then(manifest => {
+      return currentDownload.storage.storeManifest(currentDownload.sources.dash[0].url, {}).then(manifest => {
         ShakaOfflineProvider._logger.debug('after storage.storeManifest', entryId);
         currentDownload.state = downloadStates.DOWNLOADING;
         currentDownload.recovered = true;
@@ -65,28 +65,15 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         currentDownload.expiration = manifest.expiration;
         currentDownload.expectedSize = manifest.expectedSize;
         currentDownload.size = 0;
-      }).catch(error =>
-      {
-        return reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data && error.data[0]))
-      })
-        .then(() => this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload)))
-        .catch(error => {
-          return reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data))
-        })
-        .then(() => currentDownload.storage.download(currentDownload.sources.dash[0].url))
-        .catch(error => {
-          return reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data && error.data[0]))
-        })
-        .then((manifest) => {
-          currentDownload.size = manifest.size;
-          currentDownload.state = manifest.downloadStatus;
-          resolve();
-        })
+        return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload)).then(() => {
+          return currentDownload.storage.download(currentDownload.sources.dash[0].url).then(manifest => {
+            currentDownload.size = manifest.size;
+            currentDownload.state = manifest.downloadStatus;
+            resolve();
+          }, error => reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data && error.data[0])))
+        }, error => reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data)))
+      }, error => reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data && error.data[0])))
     })
-  }
-
-  _getErrorData(error: any): any {
-    return typeof error === Error ? error.data : error && error.data && error.data[0];
   }
 
   pause(entryId: string): Promise<*> {
