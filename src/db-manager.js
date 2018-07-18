@@ -68,7 +68,10 @@ export default class DBManager{
       return db.transaction(storeName)
         .objectStore(storeName).get(entryId);
     }).then(obj =>{
-      return obj;
+      if (obj){
+        return obj;
+      }
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, {entryId: entryId}));
     }).catch(error => {
       return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
     });
