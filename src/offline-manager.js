@@ -384,7 +384,7 @@ export default class OfflineManager extends FakeEventTarget {
    * @param error
    * @private
    */
-   _onError(error: Error): void {
+  _onError(error: Error): void {
     let event = new FakeEvent(EVENTS.ERROR, error);
     this.dispatchEvent(event);
   }

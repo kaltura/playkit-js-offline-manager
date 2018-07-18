@@ -70,9 +70,13 @@ export class ShakaOfflineProvider extends FakeEventTarget {
             currentDownload.size = manifest.size;
             currentDownload.state = manifest.downloadStatus;
             resolve();
-          }, error => reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data && error.data[0])))
-        }, error => reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data)))
-      }, error => reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, error.data && error.data[0])))
+          })
+        })
+      }).catch(error => {
+        // Shaka error's data parameter is an array, we want to normalize it.
+        const data = Array.isArray(error.data) ? error.data[0] : error.data;
+        return reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, data));
+      });
     })
   }
 
