@@ -233,8 +233,8 @@ export default class OfflineManager extends FakeEventTarget {
             state: currentDownload.state,
             entryId: entryId
           });
-        }).catch(error => this._onError(error));
-      }).catch(error => this._onError(error));
+        })
+      })
     }).catch(error => this._onError(error));
   }
 
