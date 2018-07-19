@@ -80,10 +80,6 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     })
   }
 
-  _getErrorData(error: any): any {
-    return typeof error === Error ? error.data : error && error.data && error.data[0];
-  }
-
   pause(entryId: string): Promise<*> {
     ShakaOfflineProvider._logger.debug('pause', entryId);
     const currentDownload = this._downloads[entryId];
