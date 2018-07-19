@@ -1,5 +1,5 @@
 // @flow
-import {ShakaOfflineProvider, PROGRESS_EVENT} from "./shaka-offline-provider";
+import {ShakaOfflineProvider, PROGRESS_EVENT} from './shaka-offline-provider';
 import {Provider} from 'playkit-js-providers';
 import {Utils, FakeEventTarget, EventManager, Error, EventType as EVENTS, FakeEvent} from 'playkit-js';
 import getLogger, {setLogLevel, LogLevel} from './utils/logger'
@@ -374,6 +374,7 @@ export default class OfflineManager extends FakeEventTarget {
         expectedSize: item.expectedSize,
         size: item.size,
         expiration: item.expiration,
+        duration: item.sources.duration,
         state: item.state
       };
     });
