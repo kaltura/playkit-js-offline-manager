@@ -374,6 +374,7 @@ export default class OfflineManager extends FakeEventTarget {
         expectedSize: item.expectedSize,
         size: item.size,
         expiration: item.expiration,
+        duration: item.sources.duration,
         state: item.state
       };
     });
