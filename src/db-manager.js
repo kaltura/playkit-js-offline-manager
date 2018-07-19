@@ -58,7 +58,7 @@ export default class DBManager{
       tx.objectStore(storeName).delete(key);
       return tx.complete;
     }).catch(error => {
-      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.INDEXED_DB_ERROR, error));
     });
   }
 
@@ -70,7 +70,7 @@ export default class DBManager{
     }).then(obj =>{
       return obj;
     }).catch(error => {
-      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.INDEXED_DB_ERROR, error));
     });
   }
 
@@ -82,7 +82,7 @@ export default class DBManager{
     }).then(allObjs => {
       return allObjs;
     }).catch(error => {
-      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.INDEXED_DB_ERROR, error));
     });
   }
 
