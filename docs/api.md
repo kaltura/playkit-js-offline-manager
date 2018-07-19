@@ -1,18 +1,17 @@
 # Offline Manager APIs
 
-Here you'll find a list of API calls and handling progress and error events.
+Here you'll find a list of API calls and handling the progress of a download.
 
  - [API list](#API-list)
  - [Progress](#progress)
  - [Download options object](#download-options)
- - [Error](#error-handling)
 
 ## API List
 
 | Name | Params | Returns | Description |
 |--|--|--|--|
 |`getMediaConfig`|`MediaInfo object`|Provider info object|Getting information per entry - DRM info, manifest url etc. The information will be used by the Download Manager in the download process|
-| `download` | `entryId: string`, `options` - optional| `promise<*>` | Start downloading an entry |
+|`download` | `entryId: string`, `options` - optional| `promise<*>` | Start downloading an entry |
 |`pause`|`entryId: string`|`promise<*>`| Pausing an ongoing download
 |`resume`|`entryId: string`|`promise<*>`| Resuming the download of an entry
 |`remove`|`entryId: string`|`promise<*>`| Removing a stored / partially-stored entry. This also can be used when you want to cancel a download that's still in progress.
@@ -32,6 +31,7 @@ const options = {
 	language: 'es',
   bitrate: 7900446
 }
+offlineManager.download('entryId', options);
 ```
 The Download Manager will try to find a stream that matches the value of the language. Then, it will find a video track with the closest bitrate to the one sent.
 If no language or bitrate is specified, it will select the lowest bitrate and a random audio track.
@@ -42,28 +42,10 @@ The Download Manager fires progress events (for each download). The progress eve
 
 Here's an example of how to listen to the progress event:
 ```javascript
-let downloadManager = new KalturaPlayer.downloadManager(playerConfig);
-downloadManager.addEventListener("progress", event => {
+let offlineManager = new KalturaPlayer.offlineManager(playerConfig);
+offlineManager.addEventListener("progress", event => {
   let progressData = event.payload.detail;
 	console.info("entryId", progressData.entryId);
 	console.info("progress", progressData.progress);
-});
-```
-
-## Error Handling
-
-The Download Manager fires error events. The errors are in the same structure as the Kaltura Player errors.
-
-> Read more about the Kaltura player errors [here](https://github.com/kaltura/kaltura-player-js/blob/master/docs/errors.md).
-
-Here's an example of how to listen to an error event:
-```javascript
-KalturaPlayer.downloadManager(playerConfig);
-downloadManager.addEventListener("error", event => {
-	const error = e.payload;
-	console.log('The error severity is: ' + error.severity);
-	console.log('The error category is: ' + error.category);
-	console.log('The error code is: ' + error.code);
-	console.log('The error data is', error.data);
 });
 ```

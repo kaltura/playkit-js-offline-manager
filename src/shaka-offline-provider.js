@@ -57,7 +57,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       this._configureDrmIfNeeded(entryId);
       currentDownload['storage'] = this._initStorage(entryId, options);
       // first store manifest
-      currentDownload.storage.storeManifest(currentDownload.sources.dash[0].url, {}).then(manifest=>{
+      return currentDownload.storage.storeManifest(currentDownload.sources.dash[0].url, {}).then(manifest => {
         ShakaOfflineProvider._logger.debug('after storage.storeManifest', entryId);
         currentDownload.state = downloadStates.DOWNLOADING;
         currentDownload.recovered = true;
@@ -65,16 +65,17 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         currentDownload.expiration = manifest.expiration;
         currentDownload.expectedSize = manifest.expectedSize;
         currentDownload.size = 0;
-        return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload));
-      }).then(() => {
-        // then download the content
-        return currentDownload.storage.download(currentDownload.sources.dash[0].url)
-      }).then((manifest) => {
-        currentDownload.size = manifest.size;
-        currentDownload.state = manifest.downloadStatus;
-        resolve();
-      }).catch((error) => {
-        reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_ABORTED, error));
+        return this._dbManager.add(ENTRIES_MAP_STORE_NAME, entryId, this.prepareItemForStorage(currentDownload)).then(() => {
+          return currentDownload.storage.download(currentDownload.sources.dash[0].url).then(manifest => {
+            currentDownload.size = manifest.size;
+            currentDownload.state = manifest.downloadStatus;
+            resolve();
+          })
+        })
+      }).catch(error => {
+        // Shaka error's data parameter is an array, we want to normalize it.
+        const data = Array.isArray(error.data) ? error.data[0] : error.data;
+        return reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.DOWNLOAD_FAILED, data));
       });
     })
   }
@@ -82,13 +83,18 @@ export class ShakaOfflineProvider extends FakeEventTarget {
   pause(entryId: string): Promise<*> {
     ShakaOfflineProvider._logger.debug('pause', entryId);
     const currentDownload = this._downloads[entryId];
-    return currentDownload.storage.pause();
+    return currentDownload.storage.pause().catch(error => {
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.PAUSE_FAILED, error.data && error.data[0]));
+    });
   }
 
   resume(entryId: string): Promise<*> {
     ShakaOfflineProvider._logger.debug('resume', entryId);
     const currentDownload = this._downloads[entryId];
-    return currentDownload.storage.download(currentDownload.sources.dash[0].url);
+    return currentDownload.storage.download(currentDownload.sources.dash[0].url)
+      .catch(error => {
+        return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.RESUME_FAILED, error.data && error.data[0]));
+      });
   }
 
   remove(entryId): Promise<*> {
@@ -102,6 +108,8 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     return Promise.all([pausePromise, storePormise]).then(() => {
       currentDownload.storage = this._initStorage(entryId, {action: 'remove'});
       return currentDownload.storage.remove(currentDownload.sources.dash[0].url);
+    }).catch(error => {
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REMOVE_FAILED, error.data && error.data[0]));
     });
   }
 
@@ -132,16 +140,13 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         ShakaOfflineProvider._logger.error(error);
         return;
       }
-
       const playerError = new Error(
         error.severity,
         error.category,
         error.code,
         error.data);
       ShakaOfflineProvider._logger.error(playerError);
-      this.dispatchEvent(new FakeEvent(EVENTS.ERROR, {
-        detail: playerError
-      }));
+      this.dispatchEvent(new FakeEvent(EVENTS.ERROR, playerError));
     }
   }
 
@@ -174,7 +179,6 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     return storeObj;
   }
 
-
   /**
    * This function makes an entry ready to be used by the download manager.
    * It gets the entry data from DB, it refreshes the drm data and create a shaka storage
@@ -194,7 +198,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
         this._downloads[entryId] = data;
         return resolve();
       }).catch(error => {
-        reject(error);
+        return reject(error);
       });
     }).then(() => {
       let currentDownload = this._downloads[entryId];
@@ -202,7 +206,7 @@ export class ShakaOfflineProvider extends FakeEventTarget {
       this._updateDrmDataIfNeeded(entryId, newMediaInfo);
       return Promise.resolve();
     }).catch(error => {
-      Promise.reject(error);
+      return Promise.reject(error);
     });
   }
 
@@ -238,10 +242,10 @@ export class ShakaOfflineProvider extends FakeEventTarget {
     let configuration = {
       usePersistentLicense: true
     };
-    if (options.bitrate || options.language){
+    if (options.bitrate || options.language) {
       configuration["trackSelectionCallback"] = this._trackSelectionCallback(options.bitrate, options.language);
     }
-    if (!options.action || options.action !== 'remove'){
+    if (!options.action || options.action !== 'remove') {
       configuration["progressCallback"] = this._setDownloadProgress(entryId);
     }
     storage.configure(configuration);

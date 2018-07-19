@@ -5,7 +5,8 @@ import {Error} from 'playkit-js'
 
 const KEY_PATH: string = 'entryId';
 const ENTRIES_MAP_STORE_NAME: string = 'entriesMap';
-const DB_NAME: string = 'offline-manager'
+const DB_NAME: string = 'offline-manager';
+
 /**
  * Your class description.
  * @classdesc
@@ -46,7 +47,7 @@ export default class DBManager{
       store.put(item);
       return tx.complete;
     }).catch((error)=> {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.CANNOT_ADD_ITEM, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.CANNOT_ADD_ITEM, error));
     });
   }
 
@@ -57,7 +58,7 @@ export default class DBManager{
       tx.objectStore(storeName).delete(key);
       return tx.complete;
     }).catch(error => {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.INDEXED_DB_ERROR, error));
     });
   }
 
@@ -69,7 +70,7 @@ export default class DBManager{
     }).then(obj =>{
       return obj;
     }).catch(error => {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.INDEXED_DB_ERROR, error));
     });
   }
 
@@ -81,7 +82,7 @@ export default class DBManager{
     }).then(allObjs => {
       return allObjs;
     }).catch(error => {
-      Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.REQUESTED_ITEM_NOT_FOUND, error));
+      return Promise.reject(new Error(Error.Severity.RECOVERABLE, Error.Category.STORAGE, Error.Code.INDEXED_DB_ERROR, error));
     });
   }
 
