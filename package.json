@@ -12,7 +12,7 @@
     "release": "standard-version",
     "pushTaggedRelease": "git push --follow-tags --no-verify origin master",
     "eslint": "eslint . --color",
-    "flow": "flow check",
+    "flow": "flow check"
   },
   "publishConfig": {
     "access": "public"
