@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/kaltura/playkit-js-offline-manager/compare/v1.1.0...v1.2.0) (2018-07-19)
+
+
+### Features
+
+* **FEC-8388:** adding duration field to the getAllDownloads() API ([#8](https://github.com/kaltura/playkit-js-offline-manager/issues/8)) ([7f0f3f1](https://github.com/kaltura/playkit-js-offline-manager/commit/7f0f3f1))
+* **FEC-8391:** checking if the quota exceeded error ([#9](https://github.com/kaltura/playkit-js-offline-manager/issues/9)) ([edf0dd3](https://github.com/kaltura/playkit-js-offline-manager/commit/edf0dd3))
+
+
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/kaltura/playkit-js-offline-manager/compare/v1.0.3...v1.1.0) (2018-05-10)
 
