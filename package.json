@@ -1,5 +1,5 @@
 {
-  "name": "playkit-js-offline-manager",
+  "name": "@playkit-js/playkit-js-offline-manager",
   "version": "1.2.0",
   "main": "dist/playkit-offline-manager.js",
   "scripts": {
@@ -10,15 +10,16 @@
     "watch": "webpack --progress --colors --watch",
     "test": "NODE_ENV=test karma start --color",
     "release": "standard-version",
-    "publish": "git push --follow-tags --no-verify origin master",
+    "pushTaggedRelease": "git push --follow-tags --no-verify origin master",
     "eslint": "eslint . --color",
-    "flow": "flow check",
-    "commit:dist": "git add --force --all dist && (git commit -m 'chore: update dist' || exit 0)"
+    "flow": "flow check"
   },
-  "standard-version": {
-    "scripts": {
-      "postbump": "yarn run build && npm run commit:dist"
-    }
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "idb": "^2.0.4",
+    "js-logger": "^1.4.1"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
@@ -70,7 +71,15 @@
     "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#v2.7.1",
     "shaka-player": "https://github.com/kaltura/shaka-player.git#v2.3.3-k-4"
   },
-  "keywords": [],
+  "keywords": [
+    "kaltura",
+    "offline",
+    "DRM",
+    "player",
+    "playkit-js",
+    "playkit-js-offline-manager",
+    "html5 player"
+  ],
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
@@ -79,9 +88,5 @@
   "bugs": {
     "url": "https://github.com/kaltura/playkit-js-offline-manager/issues"
   },
-  "homepage": "https://github.com/kaltura/playkit-js-offline-manager#readme",
-  "dependencies": {
-    "idb": "^2.0.4",
-    "js-logger": "^1.4.1"
-  }
+  "homepage": "https://github.com/kaltura/playkit-js-offline-manager#readme"
 }
