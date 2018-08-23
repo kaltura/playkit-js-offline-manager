@@ -38,7 +38,7 @@
     "eslint-plugin-flowtype": "^2.30.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-mocha-no-only": "^0.0.5",
-    "flow-bin": "latest",
+    "flow-bin": "0.43.1",
     "istanbul": "^0.4.5",
     "karma": "^1.5.0",
     "karma-chai": "^0.1.0",
@@ -53,8 +53,8 @@
     "karma-webpack": "^2.0.2",
     "mocha": "^3.2.0",
     "mocha-cli": "^1.0.1",
-    "playkit-js": "https://github.com/kaltura/playkit-js.git#v0.32.4",
-    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#v2.3.0",
+    "playkit-js": "https://github.com/kaltura/playkit-js.git#master",
+    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#master",
     "pre-push": "^0.1.1",
     "shaka-player": "https://github.com/kaltura/shaka-player.git#v2.3.3-k-4",
     "sinon": "^2.0.0",
@@ -66,7 +66,7 @@
     "webpack-dev-server": "latest"
   },
   "peerDependencies": {
-    "playkit-js": "https://github.com/kaltura/playkit-js.git#v0.32.4",
+    "playkit-js": "https://github.com/kaltura/playkit-js.git#v0.35.0",
     "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#v2.7.1",
     "shaka-player": "https://github.com/kaltura/shaka-player.git#v2.3.3-k-4"
   },
