@@ -1,5 +1,9 @@
 # Playkit JS Offline Manager
 
+# Deprecated
+
+## `NOTE`: This plugin is not mantained any more
+
 PlayKit JS Offline Manager is a javascript library that gives the ability to store and manage content locally. The offline manager provides an API to control the entire download process (download, resume, pause, cancel) and to delete stored content. The offline manager supports storing both clear and protected content.
 
 PlayKit JS  Offline Manager is written in [ECMAScript6], analyzed statically using [Flow], and transpiled in ECMAScript5 using [Babel].
