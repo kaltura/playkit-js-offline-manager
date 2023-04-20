@@ -12,7 +12,6 @@ PlayKit JS  Offline Manager is written in [ECMAScript6], analyzed statically usi
 [ECMAScript6]: https://github.com/ericdouglas/ES6-Learning#articles--tutorials
 [Babel]: https://babeljs.io
 
-
 ## Table of Contents
 
   * [Getting Started](#getting-started)
