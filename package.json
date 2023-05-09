@@ -67,8 +67,8 @@
     "webpack-dev-server": "latest"
   },
   "peerDependencies": {
-    "playkit-js": "https://github.com/kaltura/playkit-js.git#v0.35.0",
-    "playkit-js-providers": "https://github.com/kaltura/playkit-js-providers.git#v2.7.1",
+    "@playkit-js/playkit-js": "0.82.2",
+    "@playkit-js/playkit-js-providers": "2.39.2",
     "shaka-player": "https://github.com/kaltura/shaka-player.git#v2.3.3-k-4"
   },
   "keywords": [
