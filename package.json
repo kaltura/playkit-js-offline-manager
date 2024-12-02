@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "idb": "^2.0.4",
-    "js-logger": "^1.4.1"
+    "js-logger": "^1.6.1"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
